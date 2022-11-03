@@ -1,0 +1,20 @@
+# Dockerfile.aws: Dockerfile for the fly.io deploy-process container
+#
+# docker build context needs to be repo root
+
+FROM amazon/aws-cli:latest
+
+RUN yum install -y \
+    jq \
+    nodejs
+
+COPY frontend/dist/ ./frontend/dist/
+COPY backend/src/ ./backend/src/
+COPY backend/package.json ./backend/package.json
+COPY backend/package-lock.json ./backend/package-lock.json
+COPY Dockerfile.webapp ./Dockerfile
+RUN cd backend && npm install
+
+COPY ./installer/linux/aws/go.sh ./go.sh
+
+ENTRYPOINT [ "./go.sh" ]
