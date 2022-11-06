@@ -1,0 +1,24 @@
+upstream alewife-frontend {
+  server frontend:${FRONTEND_PORT};
+  server ${CONTAINER_HOST_ADDR}:${FRONTEND_PORT} backup;
+}
+
+upstream alewife-backend {
+  server ${CONTAINER_HOST_ADDR}:${BACKEND_PORT};
+}
+
+resolver 127.0.0.11 valid=10s;
+
+server {
+  listen 80 default;
+  server_name ${NODE_NAME};
+
+  location /api {
+    proxy_pass http://alewife-backend;
+  }
+
+  location / {
+    proxy_pass http://alewife-frontend;
+  }
+}
+  

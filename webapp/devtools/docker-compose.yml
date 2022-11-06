@@ -1,0 +1,78 @@
+# todo: service healthchecks to ensure up-ness
+
+services:
+  db:
+    build:
+      context: ../db
+    environment:
+      - POSTGRES_USER=${PGUSER}
+      - POSTGRES_PASSWORD=${PGPASSWORD}
+      - POSTGRES_DB=${PGDATABASE}
+    image: alewife-pg
+    ports:
+      - ${PGPORT}:${PGPORT}
+    volumes:
+      - "../db/storage:/var/lib/postgresql/data"
+
+  backend:
+    build:
+      context: ../backend
+      args:
+        - GID=${GROUP_ID}
+        - UID=${USER_ID}
+    depends_on:
+      - db
+    environment:
+      - JWT_SECRET=${BACKEND_JWT_SECRET}
+      - NODE_NAME
+      - PGUSER
+      - PGPASSWORD
+      - PGHOST=${CONTAINER_HOST_ADDR}
+      - PGDATABASE
+      - PGPORT
+      - PORT=${BACKEND_PORT}
+      - USER_NAME
+    extra_hosts:
+      - ${CONTAINER_HOST_ADDR}:host-gateway
+    image: alewife-backend
+    ports:
+      - ${BACKEND_PORT}:${BACKEND_PORT}
+
+  frontend:
+    build:
+      context: ../frontend
+      args:
+        - GID=${GROUP_ID}
+        - UID=${USER_ID}
+    depends_on:
+      - backend
+    environment:
+      - NODE_ENV=production
+      - NODE_NAME
+      - PORT=${FRONTEND_PORT}
+      - USER_NAME
+    image: alewife-frontend
+    ports:
+      - ${FRONTEND_PORT}:${FRONTEND_PORT}
+
+  proxy-server:
+    build:
+      context: ../proxy-server
+    depends_on:
+      - backend
+      - frontend
+    environment:
+      - CONTAINER_HOST_ADDR
+      - BACKEND_PORT
+      - FRONTEND_PORT
+      - NODE_NAME
+      - PROXY_SERVER_HTTP
+      - PROXY_SERVER_HTTPS
+    extra_hosts:
+      - ${CONTAINER_HOST_ADDR}:host-gateway
+    image: alewife-proxy-server
+    ports:
+      - ${PROXY_SERVER_HTTP}:80
+      - ${PROXY_SERVER_HTTPS}:443
+    volumes:
+      - "../proxy-server/templates:/etc/nginx/templates"
