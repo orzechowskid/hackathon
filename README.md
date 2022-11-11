@@ -23,4 +23,4 @@ Alewife is still in its very early stages and its setup instructions currently a
 
 ## Contributing
 
-please help!  
+please help!  download it and give it a whirl, or even better, help me build more features!
