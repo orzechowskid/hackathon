@@ -12,7 +12,7 @@ post, share, and follow your friends and acquaintances like any other social net
 
 ## How do I get it?
 
-Alewife is still in its very early stages and its setup instructions currently assume a certain level of technical know-how.  (hopefully this will be changing in the very near future)
+Alewife is still in its very early stages and its setup instructions currently assume a certain level of technical know-how (hopefully this will be changing in the very near future).  but for right now:
 
 1. install Docker and git
 2. sign up with a supported hosting provider
