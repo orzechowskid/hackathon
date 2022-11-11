@@ -32,4 +32,20 @@ router.get('/refresh', (req, res) => {
     .end();
 });
 
+router.get('/session', (req, res) => {
+  const {
+    'x-jwt': token
+  } = req.headers;
+
+  if (token) {
+    return res.status(200)
+      .json({ username: process.env.USER_NAME })
+      .end();
+  }
+  else {
+    res.status(401)
+      .end();
+  }
+});
+
 module.exports = router;

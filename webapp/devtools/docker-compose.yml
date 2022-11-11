@@ -1,5 +1,3 @@
-# todo: service healthchecks to ensure up-ness
-
 services:
   db:
     build:
@@ -10,9 +8,10 @@ services:
       - POSTGRES_DB=${PGDATABASE}
     image: alewife-pg
     ports:
-      - ${PGPORT}:${PGPORT}
+      - ${PGPORT}:5432
     volumes:
-      - "../db/storage:/var/lib/postgresql/data"
+      - "../db/create.sql:/docker-entrypoint-initdb.d/create_tables.sql"
+      - "../db/storage/${ALEWIFE_ENV}:/var/lib/postgresql/data"
 
   backend:
     build:
@@ -24,7 +23,7 @@ services:
       - db
     environment:
       - JWT_SECRET=${BACKEND_JWT_SECRET}
-      - NODE_NAME
+      - NODE_NAME=${NODE_LOCATION}
       - PGUSER
       - PGPASSWORD
       - PGHOST=${CONTAINER_HOST_ADDR}
@@ -66,13 +65,12 @@ services:
       - BACKEND_PORT
       - FRONTEND_PORT
       - NODE_NAME
-      - PROXY_SERVER_HTTP
       - PROXY_SERVER_HTTPS
     extra_hosts:
       - ${CONTAINER_HOST_ADDR}:host-gateway
     image: alewife-proxy-server
     ports:
-      - ${PROXY_SERVER_HTTP}:80
       - ${PROXY_SERVER_HTTPS}:443
     volumes:
       - "../proxy-server/templates:/etc/nginx/templates"
+      - "./fake-ca/domains:/etc/nginx/ssl/domains"

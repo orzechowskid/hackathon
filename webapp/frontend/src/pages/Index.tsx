@@ -2,6 +2,7 @@ import {
   type FormSubmitEvent,
   type PageComponent,
   useCallback,
+  useEffect,
   useState
 } from 'react';
 import {
@@ -88,13 +89,23 @@ const LoginPanel = () => {
 
 const Index: PageComponent = () => {
   const {
+    restore,
     user
   } = useIdentity();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (user === false) {
+      navigate('/public');
+    }
+  }, [ user ]);
+
+  useEffect(() => {
+    restore();
+  }, [ restore ]);
 
   return (
-    <Container>
-      {user ? <StyledApp /> : <LoginPanel />}
-    </Container>
+    user ? <App /> : null
   );
 };
 

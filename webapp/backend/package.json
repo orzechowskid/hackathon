@@ -18,5 +18,8 @@
     "pg": "^8.8.0",
     "rss-to-json": "^2.1.0",
     "uuid": "^9.0.0"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.6.5"
   }
 }

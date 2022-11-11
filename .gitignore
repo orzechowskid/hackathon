@@ -1,5 +1,6 @@
 node_modules/
 webapp/frontend/dist/
+webapp/db/storage/*
 .log/
 .cache/
 *~

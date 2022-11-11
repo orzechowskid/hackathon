@@ -24,78 +24,108 @@ router.use((req, res, next) => {
   next();
 });
 
-router.get('/timeline', async (req, res) => {
-  const posts = await db.getPosts({
-    limit: 1000
-  });
-  const timelines = await db.getTimelines();
-  const recentPosts = [
-    ...posts,
-    ...Object.values(timelines).flatMap((x) => x)
-  ].sort((a, b) => b.published - a.published) // desc
-    .slice(0, 50);
-
-  res.status(200)
-    .json(recentPosts)
-    .end();
-});
-
 router.post('/connect', async (req, res) => {
   const {
     host
-  } = req.query;
-  const connection = (await db.getConnections())[host];
+  } = req.body;
+  const connection = await db.getConnection(host);
 
-  if (connection) {
+  if (!host) {
+    res.status(400)
+      .end();
+
+    return;
+  }
+  else if (connection) {
     res.status(409)
       .end();
+
+    return;
   }
-  else {
-    try {
-      await new Promise(async (resolve, reject) => {
-        try {
-          const handle = setTimeout(reject, 10 * 1000);
-          const token = uuid();
 
-          await db.createConnection(host, {
+  try {
+    const result = await new Promise(async (resolve, reject) => {
+      try {
+        const handle = setTimeout(reject, 10 * 1000);
+        let existingConnection = await db.getConnection(host);
+
+        if (existingConnection && existingConnection.status !== 'unconfirmed') {
+          console.log('existing non-pending connection');
+          resolve(undefined);
+
+          return;
+        }
+        else if (!existingConnection) {
+          existingConnection = await db.createConnection({
+            host,
             status: 'unconfirmed',
-            token
+            token: uuid()
           });
-
-          const response = await fetch(`${host}/api/1/public/connectrequest?token=${token}`, {
-            headers: {
-              'X-ID': process.env.NODE_NAME
-            }
-          });
-          const payload = await response.json();
-
-          await db.updateConnection(host, {
-            status: 'follower',
-            token: payload.token
-          });
-          clearTimeout(handle);
-          resolve();
         }
-        catch (ex) {
-          reject(ex);
-        }
-      });
+        const response = await fetch(`https://${host}/api/1/public/connectrequest`, {
+          headers: {
+            'X-ID': process.env.NODE_NAME,
+            'X-JWT': existingConnection.token
+          },
+          method: 'POST'
+        });
 
+        if (response.status >= 400) {
+          reject(response.status);
+
+          return;
+        }
+
+        const x = await response.json();
+        const updatedConnection = await db.updateConnection({
+          ...existingConnection,
+          status: 'follower'
+        });
+
+        clearTimeout(handle);
+        resolve(updatedConnection);
+      }
+      catch (ex) {
+        reject(ex);
+      }
+    });
+
+    if (!result) {
+      res.status(409)
+        .end();
+    }
+    else {
       await db.createNotification({
-        message: `you are now following ${host}`,
-        new: true
+        text: `you are now following ${host}`,
       });
       refreshTimeline();
       res.status(200)
         .json({ ok: true })
         .end();
     }
-    catch (ex) {
-      console.log(ex.message);
-      res.status(500)
-        .end();
-    }
   }
+  catch (ex) {
+    console.log(ex?.message ?? 'unknown exception in /connect');
+    res.status(500)
+      .end();
+  }
+});
+
+router.get('/explore', async (req, res) => {
+    res.status(200)
+    .json({
+      topics: [
+        'helloweb'
+      ],
+      users: []
+    })
+    .end();
+});
+
+router.get('/info', (req, res) => {
+  res.status(200)
+    .json({ username: 'danorz' })
+    .end();
 });
 
 router.get('/notifications', async (req, res) => {
@@ -114,40 +144,69 @@ router.get('/notifications/stats', async (req, res) => {
   .end();
 });
 
+router.get('/posts', async (req, res) => {
+  try {
+    const posts = await db.getPosts({
+      limit: 1000
+    });
+
+    res.status(200)
+      .json(posts)
+      .end();
+  }
+  catch (ex) {
+    console.error(ex.message);
+    res.status(500)
+      .end();
+  }
+});
+
 router.post('/posts', async (req, res) => {
   const {
-    groups,
+    permissions,
     tags,
     text,
     title
   } = req.body;
 
-  if (!groups || !tags || !text || !title) {
+  if (!permissions || !tags || !text || !title) {
     res.status(400).end();
   }
   else {
     try {
-      await db.createPost({
+      const newPost = await db.createPost({
         author: process.env.USER_NAME,
+        permissions,
         tags,
         text,
         title
-      }, groups ?? [ 'public' ]);
+      });
 
       res.status(201)
-        .json((await db.getPosts()).at(-1))
+        .json(newPost)
         .end();
     }
     catch (ex) {
+      console.error(ex.message);
       res.status(500)
         .end();
     }
   }
 });
 
-router.get('/info', (req, res) => {
+router.get('/timeline', async (req, res) => {
+  const posts = await db.getPosts({
+    limit: 1000
+  });
+  const timelines = await refreshTimeline();
+  const recentPosts = [
+    ...posts,
+    ...Object.values(timelines).flatMap((x) => x)
+  ].sort((a, b) => b.published - a.published) // desc
+    .slice(0, 50);
+
   res.status(200)
-    .json({ username: 'danorz' })
+    .json(recentPosts)
     .end();
 });
 

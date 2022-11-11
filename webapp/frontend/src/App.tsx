@@ -1,291 +1,164 @@
 import {
-  type ButtonClickEvent,
-  type ChildComponent,
-  type ChangeEvent,
-  type FormSubmitEvent,
-  type FunctionComponent,
-  useCallback,
-  useEffect,
-  useState
-} from 'react';
-import {
-  useLocation
+  Outlet
 } from 'react-router';
 import styled from 'styled-components';
 
+import alewifeLogo from '/alewife.svg';
+
+import ConnectForm from './components/ConnectForm';
+import NewPostPanel from './components/NewPostPanel';
+import {
+  useIdentity
+} from './hooks/useIdentity';
 import {
   useRemoteData
 } from './hooks/useRemoteData';
-import {
-  formatTimeAgo
-} from './utils/time';
 
-const TimelineContainer = styled.div`
-`;
-const ConnectContainer = styled.div`
-`;
-const TimelineItemTimestamp = styled.div`
-`;
-const TimelineItemContent = styled.div`
-`;
-const TimelineMarker = styled.div`
-  display: block;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: #a0d0a0;
-  border: solid 1px #a0d0a0;
-`;
-const TimelineMarkerLine = styled.div`
-  width: 0;
-  position: relative;
-  left: 1px;
-  border: 1px solid #a0d0a0;
-`;
-const ExploreContainer = styled.div`
-`;
-const NewPostContainer = styled.form`
-  textarea {
-    display: block;
+interface ExploreDTO {
+  topics: string[];
+  users: string[];
+}
+
+const TitleTextContainer = styled.div`
+  div:first-child {
+    font-size: 24px;
+    font-weight: bold;
   }
 
-  [disabled] {
-    display: none;
+  div:last-child {
+    font-size: 14px;
+    font-style: italic;
   }
 `;
-const TimelineItem = styled.div`
+
+const SidebarContainer = styled.div`
+`;
+
+const NewPostContainer = styled(NewPostPanel)``;
+
+const AppContainer = styled.div`
+  flex-grow: 1;
   display: grid;
-  grid-template-columns: 100px 4px 1fr;
-  grid-gap: 12px;
+  grid-template-rows: max-content max-content 1fr;
+  grid-template-columns: 25vw 1fr;
+  grid-gap: 24px;
+  padding: 24px;
+  background-color: var(--color-gray-800);
 
-  ${TimelineItemTimestamp} {
+  ${TitleTextContainer} {
+    grid-row: 1;
+    grid-column: 2;
+  }
+  
+  > a:has(img) {
     grid-row: 1;
     grid-column: 1;
-  }
 
-  ${TimelineMarker} {
-    grid-row: 1;
-    grid-column: 2;
-    justify-self: center;
-    align-self: flex-start;
-  }
-
-  ${TimelineMarkerLine} {
-    grid-row: 1 / span 2;
-    grid-column: 2;
-    min-height: 96px;
-  }
-
-  ${TimelineItemContent} {
-    grid-row: 1 / span 2;
-    grid-column: 3;
-    margin: 12px;
-    background-color: white;
-    transition: background-color 0.1s linear;
-
-    &:hover {
-      background-color: #fafafa;
+    img {
+      width: 80px;
     }
   }
-`;
 
-const Container = styled.div`
-  display: grid;
-  grid-template-columns: max-content 1fr;
-
-  h1 {
-    grid-row: 1;
+  ${SidebarContainer} {
+    grid-row: 2 / span 2;
     grid-column: 1;
   }
 
-  ${ConnectContainer} {
+  ${NewPostContainer} {
     grid-row: 2;
-    grid-column: 1;
-  }
-
-  ${TimelineContainer} {
-    grid-row: 2 / span 3;
     grid-column: 2;
-  }
-
-  ${ExploreContainer} {
-    grid-row: 3;
-    grid-column: 1;
   }
 `;
 
-interface NewPostForm {
-  content: HTMLTextAreaElement;
-  title: HTMLInputElement;
-}
-
-function NewPostPanel() {
-  const {
-    post
-  } = useRemoteData();
-  const [ showInput, setShowInput ] = useState<boolean>(false);
-  const [ error, setError ] = useState<string>();
-  const [ text, setText ] = useState<string>('');
-  const onClickShow = useCallback((e: ButtonClickEvent) => {
-    setShowInput(true);
-  }, []);
-  const onCancel = useCallback((e: ButtonClickEvent) => {
-    setShowInput(false);
-  }, []);
-  const onSubmit = useCallback(async (e: FormSubmitEvent<NewPostForm>) => {
-    const {
-      elements
-    } = e.currentTarget;
-    try {
-      setError(undefined);
-      const result = await post('api/1/post', {
-        groups: [ 'public' ],
-        tags: [],
-        text: elements.content.value,
-        title: elements.title.value
-      });
-      setText('');
-      setShowInput(false);
-    }
-    catch (ex: any) {
-      setError(ex.message);
-    }
-  }, [ text ]);
-
+const Logo = () => {
   return (
-    <NewPostContainer onSubmit={onSubmit}>
-      <label>
-        <div>Title</div>
-        <input
-          id="title"
-          type="text"
-        />
-      </label>
-      <label>
-        <div>Message</div>
-        <textarea
-          disabled={!showInput}
-        />
-      </label>
-      {error ?? ''}
-      <button
-        disabled={!showInput}
-        type="submit"
-      >
-        Post!
-      </button>
-      <button
-        disabled={showInput}
-        onClick={onClickShow}
-      >
-        <span aria-hidden>+ </span>New post
-      </button>
-      <button
-        disabled={!showInput}
-        onClick={onCancel}
-      >
-        Forget it
-      </button>
-    </NewPostContainer>
-  );
-}
-
-interface PostDTO {
-  content: string;
-  published: number;
-}
-
-interface PostCardProps {
-  post: PostDTO;
-}
-
-const PostCard: FunctionComponent<PostCardProps> = (props) => {
-  const {
-    post
-  } = props;
-
-  return (
-    <TimelineItem>
-      <TimelineItemTimestamp>
-        {formatTimeAgo(new Date(post.published))}
-      </TimelineItemTimestamp>
-      <TimelineMarkerLine />
-      <TimelineMarker />
-      <TimelineItemContent>
-        {post.content}
-      </TimelineItemContent>
-    </TimelineItem>
+    <a href="/">
+      <img
+        alt="Alewife"
+        src={alewifeLogo}
+      />
+    </a>
   );
 };
 
-const App: ChildComponent = (props) => {
-  const location = useLocation();
+const TitleText = () => {
   const {
-    get,
-    post
-  } = useRemoteData();
-  const [ timeline, setTimeline ] = useState<any[] | undefined>([]);
-  const [ exploreData, setExploreData ] = useState<{ topics: string[]; users: string[]; }>({ topics: [], users: [] });
-  const params = new URLSearchParams(location.search);
-  const onClickConnect = useCallback((e: ButtonClickEvent) => {
-    const textEl = document.getElementById('connectHost') as HTMLInputElement;
+    user
+  } = useIdentity();
+  return (
+    <TitleTextContainer>
+      <h1>
+        {user ? user.username : ''}
+      </h1>
+      <div>{window.location.hostname}</div>
+    </TitleTextContainer>
+  );
+};
 
-    e.preventDefault();
-    post(`api/1/connect?host=${textEl.value}`)
-      .then((response) => {
-        console.log(response);
-      });
-  }, [ post ]);
-
-  useEffect(() => {
-    get('api/1/my/timeline')
-      .then(setTimeline);
-  }, [ ]);
-  useEffect(() => {
-    window.fetch('http://localhost:9000/api/1/explore')
-      .then((res) => res.json())
-      .then(setExploreData);
-  }, []);
+const ExploreForm = () => {
+  const {
+    data,
+    error
+  } = useRemoteData<ExploreDTO>('/api/1/my/explore');
 
   return (
-    <Container {...props}>
-      <h1>
-        {window.location.host}
-      </h1>
-      <TimelineContainer>
-        <NewPostPanel />
-        {timeline?.map((item) => (
-          <PostCard
-            key={item.link}
-            post={item}
-          />
-        ))}
-      </TimelineContainer>
-      <ConnectContainer>
-        <h2>Connect</h2>
-        <input type="text" id="connectHost" />
-        <button onClick={onClickConnect} type="button">go!</button>
-      </ConnectContainer>
-      <ExploreContainer>
-        <h2>Explore</h2>
-        <h3>Topics</h3>
-        {!exploreData.topics.length && (
-          <div>no topics found right now</div>
-        )}
-        {exploreData.topics.map((topic) => (
-          <div key={topic}>
-            <a href={`http://localhost:9000/topics/${topic}`}>
+    <section>
+      {error && (
+        <span>something went wrong, please try again later.</span>
+      )}
+      <h2>Explore</h2>
+      <section>
+        <h3>
+          Topics
+        </h3>
+        <ul>
+          {data?.topics.map((topic) => (
+            <li key={topic}>
               {`#${topic}`}
-            </a>
-          </div>
-        ))}
-        <h3>Users</h3>
-        {!exploreData.users.length && (
-          <div>no users found right now</div>
-        )}
-      </ExploreContainer>
-    </Container>
-  )
+            </li>
+          )) ?? <li>No topics to see right now</li>}
+        </ul>
+      </section>
+      <section>
+        <h3>
+          Users
+        </h3>
+        <ul>
+          {data?.users.map((user) => (
+            <li key={user}>
+              {user}
+            </li>
+          )) ?? <li>No users to see right now</li>}
+        </ul>
+      </section>
+    </section>
+  );
+};
+
+const Sidebar = () => {
+  return (
+    <SidebarContainer>
+      <section>
+        <h2>
+          Connect
+        </h2>
+        <ConnectForm />
+      </section>
+      <ExploreForm />
+    </SidebarContainer>
+  );
+};
+
+const App = () => {
+  return (
+    <AppContainer>
+      <Logo />
+      <TitleText />
+      <Sidebar />
+      <NewPostPanel />
+      <Outlet />
+    </AppContainer>
+  );
 };
 
 export default App;

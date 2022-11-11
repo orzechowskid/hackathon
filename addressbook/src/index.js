@@ -1,5 +1,10 @@
 const express = require('express');
 
+if (!process.env.PORT) {
+  console.error('$PORT not defined');
+  process.exit(1);
+}
+
 // Redis set pls
 const hostsToNames = {
   // Redis set pls

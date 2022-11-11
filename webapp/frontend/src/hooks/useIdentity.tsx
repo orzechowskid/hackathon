@@ -1,6 +1,6 @@
 import {
+  type ParentComponent,
   createContext,
-  ParentComponent,
   useCallback,
   useContext,
   useEffect,
@@ -14,8 +14,9 @@ interface UserDTO {
 interface IdentityProviderShape {
   login: (arg0: string, arg1: string) => Promise<any>;
   logout: () => Promise<any>;
+  restore: () => void;
   token: string | null;
-  user: UserDTO | null;
+  user?: UserDTO | false | undefined;
 }
 
 const TOKEN = 'alewife-jwt';
@@ -23,13 +24,13 @@ const TOKEN = 'alewife-jwt';
 const IdentityContext = createContext<IdentityProviderShape>({
   login: () => Promise.reject('no <IdentityProvider> found'),
   logout: () => Promise.reject('no <IdentityProvider> found'),
-  token: null,
-  user: null
+  restore: () => undefined,
+  token: null
 });
 
 const IdentityProvider: ParentComponent = ({ children }) => {
   const [ token, setToken ] = useState<string | null>(localStorage.getItem(TOKEN));
-  const [ user, setUser ] = useState<UserDTO | null>(null);
+  const [ user, setUser ] = useState<UserDTO | false>();
   const login = useCallback(async (username: string, password: string) => {
     const response = await window.fetch('/api/1/auth/login', {
       body: JSON.stringify({ password, username }),
@@ -44,8 +45,23 @@ const IdentityProvider: ParentComponent = ({ children }) => {
   }, []);
   const logout = useCallback(async () => {
     localStorage.removeItem(TOKEN);
-    setUser(null);
+    setUser(false);
   }, []);
+  const restore = useCallback(async () => {
+    if (!token) {
+      setUser(false);
+    }
+    else {
+      const response = await window.fetch('/api/1/auth/session', {
+        headers: {
+          'X-JWT': token
+        }
+      });
+      const obj = await response.json() as UserDTO;
+
+      setUser(obj);
+    }
+  }, [ token ]);
 
   useEffect(() => {
     if (!token) {
@@ -60,7 +76,8 @@ const IdentityProvider: ParentComponent = ({ children }) => {
       }
     })
       .then((res) => res.json())
-      .then(setUser);
+      .then(setUser)
+      .catch(() => setUser(false));
 
     const handle = setTimeout(() => {
       window.fetch('/api/1/auth/refresh', {
@@ -78,7 +95,7 @@ const IdentityProvider: ParentComponent = ({ children }) => {
   }, [ token ]);
 
   return (
-    <IdentityContext.Provider value={{ login, logout, token, user }}>
+    <IdentityContext.Provider value={{ login, logout, restore, token, user }}>
       {children}
     </IdentityContext.Provider>
   );
