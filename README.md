@@ -16,7 +16,8 @@ Alewife is still in its very early stages and its setup instructions currently a
 
 1. install Docker and git
 2. sign up with a supported hosting provider
-  - fly.io
+  - [fly.io](https://fly.io)
+  > or, if you have a computer of your own which is always on and always online, you can use [ngrok](https://ngrok.com/) instead of a hosting provider.
 3. create and save an API or access token for your hosting provider
 4. clone this repository
 5. run `./installer/linux/setup.sh`
