@@ -28,5 +28,6 @@ please help!  download it and give it a whirl, or even better, help me build mor
 ### Priorities
 
 - support for more hosting providers
+- support for installers on other operating systems 
 - images in posts
 - re-shares
