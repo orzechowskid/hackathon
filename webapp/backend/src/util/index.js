@@ -3,8 +3,15 @@ const fetch = require('node-fetch');
 const db = require('../db');
 
 /**
-  * @param {db.ConnectionDTO} connection
- * @return {Promise<db.PostDTO[]>}
+ * @typedef {Object} PublicPostDTOAttrs
+ * @property {string} host
+ *
+ * @typedef {PublicPostDTOAttrs & db.PostDTO} PublicPostDTO
+ */
+
+/**
+ * @param {db.ConnectionDTO} connection
+ * @return {Promise<db.PublicPostDTO[]>}
  */
 function getConnectionPosts(connection) {
   const {
@@ -22,10 +29,14 @@ function getConnectionPosts(connection) {
           'X-JWT': token
         }
       });
+      /** @type {db.PostDTO[]} */
       const result = await response.json();
 
       clearTimeout(rejectHandle);
-      resolve(result);
+      resolve(result.map((result) => ({
+        ...result,
+        host
+      })));
     }
     catch (ex) {
       clearTimeout(rejectHandle);
@@ -36,9 +47,15 @@ function getConnectionPosts(connection) {
 
 async function refreshTimeline() {
   const connections = await db.getConnections();
-  const data = await Promise.all(connections.map(getConnectionPosts))
 
-  return data;
+  try {
+    return Promise.all(connections.map(getConnectionPosts));
+  }
+  catch (ex) {
+    console.log(ex?.message ?? 'unknown error in refreshTimeline');
+
+    return [];
+  }
 }
 
 module.exports = {

@@ -12,9 +12,19 @@ import {
   useTimeline
 } from '../hooks/useTimeline';
 
+const ExternalHost = styled.span`
+  font-size: 14px;
+  color: var(--gray-700);
+  font-style: italic;
+`;
+
 const TimelineItemContainer = styled.div`
-  background: var(--color-gray-700);
   padding: 24px;
+  grid-gap: 12px;
+
+  ${ExternalHost} {
+    margin-left: 30px;
+  }
 `;
 
 const TimelineContainer = styled.div`
@@ -26,10 +36,31 @@ const TimelineContainer = styled.div`
 `;
 
 const TimelineItem: ChildComponent<TimelineDTO> = (props) => {
+  const {
+    author,
+    host,
+    original_host,
+    text
+  } = props;
+  const ownPost = host === window.location.hostname;
+
   return (
     <TimelineItemContainer>
-      <div>{props.author}</div>
-      <div>{props.title}</div>
+      {ownPost ? (
+        <div>{props.author}</div>
+      ) : (
+        <div>
+          <a
+            href={`https://${host}`}
+            target="_blank"
+          >
+            {author}
+          </a>
+          <ExternalHost>
+            {original_host}
+          </ExternalHost>
+        </div>
+      )}
       <div>{props.text}</div>
     </TimelineItemContainer>
   );

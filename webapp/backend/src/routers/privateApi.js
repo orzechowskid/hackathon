@@ -176,6 +176,7 @@ router.post('/posts', async (req, res) => {
     try {
       const newPost = await db.createPost({
         author: process.env.USER_NAME,
+        original_host: process.env.NODE_NAME,
         permissions,
         tags,
         text,

@@ -6,6 +6,9 @@ import styled from 'styled-components';
 import alewifeLogo from '/alewife.svg';
 
 import ConnectForm from './components/ConnectForm';
+import {
+  PageTitle
+} from './components/Heading';
 import NewPostPanel from './components/NewPostPanel';
 import {
   useIdentity
@@ -87,9 +90,9 @@ const TitleText = () => {
   } = useIdentity();
   return (
     <TitleTextContainer>
-      <h1>
+      <PageTitle>
         {user ? user.username : ''}
-      </h1>
+      </PageTitle>
       <div>{window.location.hostname}</div>
     </TitleTextContainer>
   );

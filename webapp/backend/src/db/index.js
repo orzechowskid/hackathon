@@ -19,10 +19,13 @@ let client;
 
 /**
  * @typedef {Object} PostDTO
- * @property {string} uuid
  * @property {string} author
+ * @property {string} created_at
+ * @property {string} [original_host]
+ * @property {string} permissions
  * @property {string} text
  * @property {string} title
+ * @property {string} uuid
  */
 
 /**
@@ -139,19 +142,21 @@ const getPosts = async () => {
 };
 
 /**
+ * @param {Partial<PostDTO>} post
  * @return {Promise<PostDTO>}
  */
 const createPost = async (post) => {
   const q = `
-  INSERT INTO posts(author, title, text, permissions)
-  VALUES($1, $2, $3, $4)
+  INSERT INTO posts(author, original_host, permissions, text, title)
+  VALUES($1, $2, $3, $4, $5)
   RETURNING *
   `;
   const values = [
     post.author,
-    post.title,
+    post.original_host,
+    post.permissions,
     post.text,
-    post.permissions
+    post.title
   ];
   const result = await client.query(q, values);
 
