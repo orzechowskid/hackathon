@@ -19,7 +19,6 @@ export interface NewPostPanelProps {
 
 interface NewPostFormShape {
   text: HTMLTextAreaElement;
-  title: HTMLInputElement;
 }
 
 const NewPostFormContainer = styled.form`
@@ -59,16 +58,14 @@ const NewPostPanel: ChildComponent<NewPostPanelProps> = (props) => {
     e.preventDefault();
     setFormError(undefined);
     const {
-      text,
-      title
+      text
     } = e.currentTarget.elements;
 
     try {
       const result = await create({
         permissions: 'public',
         tags: [],
-        text: text.value,
-        title: title.value,
+        text: text.value
       });
 
       setShowForm(false);
@@ -87,11 +84,6 @@ const NewPostPanel: ChildComponent<NewPostPanelProps> = (props) => {
       </div>
       {showForm && (
         <NewPostFormContainer onSubmit={onSubmit}>
-          <Input
-            id="title"
-            label="Title"
-            type="text"
-          />
           <Input
             id="text"
             label="Post text"

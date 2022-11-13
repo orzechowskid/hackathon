@@ -5,6 +5,8 @@ import {
 export interface TimelineDTO {
   author: string;
   created_at: string;
+  host: string;
+  original_host?: string;
   permissions: 'public' | 'protected' | 'private';
   tags: string[];
   text: string;
