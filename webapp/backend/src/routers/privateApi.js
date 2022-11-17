@@ -165,11 +165,10 @@ router.post('/posts', async (req, res) => {
   const {
     permissions,
     tags,
-    text,
-    title
+    text
   } = req.body;
 
-  if (!permissions || !tags || !text || !title) {
+  if (!permissions || !tags || !text) {
     res.status(400).end();
   }
   else {
@@ -180,7 +179,7 @@ router.post('/posts', async (req, res) => {
         permissions,
         tags,
         text,
-        title
+        title: '(untitled)'
       });
 
       res.status(201)

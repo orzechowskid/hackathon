@@ -48,7 +48,8 @@ const NewPostPanel: ChildComponent<NewPostPanelProps> = (props) => {
     ...otherProps
   } = props;
   const {
-    create
+    create,
+    error
   } = usePrivatePosts();
   const [ showForm, setShowForm ] = useState<boolean>(false);
   const [ formError, setFormError ] = useState<string>();
@@ -57,6 +58,7 @@ const NewPostPanel: ChildComponent<NewPostPanelProps> = (props) => {
   const onSubmit = useCallback(async (e: FormSubmitEvent<NewPostFormShape>) => {
     e.preventDefault();
     setFormError(undefined);
+
     const {
       text
     } = e.currentTarget.elements;
