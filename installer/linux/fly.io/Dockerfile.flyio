@@ -1,0 +1,31 @@
+# installs the fly.io CLI and copies all files needed for a fly.io cloud deploy
+#
+# context is repo root
+
+FROM node:16 as frontendbuilder
+
+WORKDIR /app
+
+COPY ./webapp/frontend/ ./frontend/
+RUN cd frontend && npm install && npm run build
+
+FROM node:16-alpine
+
+WORKDIR /app
+
+COPY --from=frontendbuilder /app/frontend/dist/ ./frontend/dist/
+COPY ./webapp/backend/ ./backend/
+
+RUN apk --no-cache add \
+    bash \
+    curl \
+    jq \
+    coreutils
+RUN curl -L https://fly.io/install.sh | sh
+
+COPY ./installer/linux/fly.io/fly.toml ./fly.toml
+COPY ./installer/linux/fly.io/Dockerfile ./Dockerfile
+COPY ./installer/linux/fly.io/go.sh ./go.sh
+COPY ./webapp/db/create.sql ./create.sql
+
+ENTRYPOINT [ "./go.sh" ]

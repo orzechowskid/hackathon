@@ -22,13 +22,9 @@ services:
     depends_on:
       - db
     environment:
+      - DB_CONNECTION_STRING=postgres://${PGUSER}:${PGPASSWORD}@${CONTAINER_HOST_ADDR}:${PGPORT}/${PGDATABASE}
       - JWT_SECRET=${BACKEND_JWT_SECRET}
       - NODE_NAME=${NODE_LOCATION}
-      - PGUSER
-      - PGPASSWORD
-      - PGHOST=${CONTAINER_HOST_ADDR}
-      - PGDATABASE
-      - PGPORT
       - PORT=${BACKEND_PORT}
       - USER_NAME
     extra_hosts:
@@ -56,7 +52,7 @@ services:
 
   proxy-server:
     build:
-      context: ../proxy-server
+      context: ./proxy-server
     depends_on:
       - backend
       - frontend
@@ -72,5 +68,5 @@ services:
     ports:
       - ${PROXY_SERVER_HTTPS}:443
     volumes:
-      - "../proxy-server/templates:/etc/nginx/templates"
+      - "./proxy-server/templates:/etc/nginx/templates"
       - "./fake-ca/domains:/etc/nginx/ssl/domains"

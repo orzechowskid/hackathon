@@ -12,7 +12,8 @@ CREATE TABLE IF NOT EXISTS posts(
   text varchar NOT NULL,
   created_at timestamptz NOT NULL DEFAULT NOW(),
   tags varchar[],
-  permissions varchar NOT NULL CHECK (permissions in ( 'public', 'protected', 'private' ))
+  permissions varchar NOT NULL CHECK (permissions in ( 'public', 'protected', 'private' )),
+  original_host varchar NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS connections(

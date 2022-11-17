@@ -40,7 +40,8 @@ function getConnectionPosts(connection) {
     }
     catch (ex) {
       clearTimeout(rejectHandle);
-      reject(ex);
+      //      reject(ex);
+      resolve([]);
     }
   });
 }

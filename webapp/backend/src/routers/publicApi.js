@@ -158,10 +158,11 @@ router.get('/posts', async (req, res) => {
       const filterFn = connection?.status === 'follower' || connection?.status === 'mutual'
         ? (post) => post.permissions !== 'private'
         : (post) => post.permissions === 'public';
+      const filteredPosts = posts.filter(filterFn);
 
-      console.log(`filtered->`, posts.filter(filterFn));
+      console.log(`filtered->`, filteredPosts);
       res.status(200)
-        .json(posts.filter(filterFn))
+        .json(filteredPosts)
         .end();
     }
   }

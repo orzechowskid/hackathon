@@ -8,4 +8,8 @@ else
     echo
 fi
 
-docker run --rm -e FLY_ACCESS_TOKEN=$FLY_ACCESS_TOKEN alewife-installer-flyio:latest
+if [ "$1" == "upgrade" ]; then
+    docker run --rm -e FLY_ACCESS_TOKEN=$FLY_ACCESS_TOKEN alewife-installer-flyio:latest go.sh --upgrade
+else
+    docker run --rm -e FLY_ACCESS_TOKEN=$FLY_ACCESS_TOKEN alewife-installer-flyio:latest
+fi

@@ -11,9 +11,10 @@ WORKDIR /app
 COPY ./package.json ./
 COPY ./package-lock.json ./
 COPY ./src/ ./src/
+COPY ./bin/ ./bin/
 
 RUN npm install --omit=dev
 
 USER backenduser
 
-ENTRYPOINT [ "node", "./src/index.js" ]
+ENTRYPOINT [ "node", "./bin/serve.js" ]
