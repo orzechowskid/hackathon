@@ -10,6 +10,7 @@ import {
   PageTitle
 } from './components/Heading';
 import NewPostPanel from './components/NewPostPanel';
+import QR from './components/QR';
 import {
   useIdentity
 } from './hooks/useIdentity';
@@ -21,6 +22,11 @@ interface ExploreDTO {
   topics: string[];
   users: string[];
 }
+
+const StyledQR = styled(QR)`
+  width: 64px;
+  height: 64px;
+`;
 
 const TitleTextContainer = styled.div`
   div:first-child {
@@ -146,6 +152,12 @@ const Sidebar = () => {
           Connect
         </h2>
         <ConnectForm />
+      </section>
+      <section>
+        <h2>
+          Share
+        </h2>
+        <StyledQR value={window.location.host} />
       </section>
       <ExploreForm />
     </SidebarContainer>
