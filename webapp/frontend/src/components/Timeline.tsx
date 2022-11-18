@@ -42,7 +42,9 @@ const TimelineItem: ChildComponent<TimelineDTO> = (props) => {
     original_host,
     text
   } = props;
-  const ownPost = host === window.location.hostname;
+  const ownPost = host
+    ? new URL(host).hostname === window.location.hostname
+    : true;
 
   return (
     <TimelineItemContainer>
