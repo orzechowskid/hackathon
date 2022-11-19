@@ -1,30 +1,28 @@
-import qrcode from 'qrcode';
 import {
-  type ChildComponent,
-  useEffect,
-  useRef
+  type ChildComponent
 } from 'react';
+import QRCode from 'react-qr-code';
+import styled from 'styled-components';
 
-interface QRProps {
-  value: string;
-}
+const Container = styled.span`
+  display: inline-block;
+  background: white;
+  padding: 16px;
+`;
 
-const QR: ChildComponent<QRProps> = (props) => {
+const QR: ChildComponent<{ size: number; value: string }> = (props) => {
   const {
+    size,
     value,
     ...otherProps
   } = props;
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-
-  useEffect(() => {
-    qrcode.toCanvas(canvasRef.current, props.value);
-  }, [ props.value ]);
-
   return (
-    <canvas
-      ref={canvasRef}
-      {...otherProps}
-    />
+    <Container {...otherProps}>
+      <QRCode
+        size={size}
+        value={value}
+      />
+    </Container>
   );
 };
 

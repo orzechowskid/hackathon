@@ -8,6 +8,7 @@ import styled from 'styled-components';
 import {
   useRemoteAction
 } from '../hooks/useRemoteData';
+import Button from './Button';
 import Input from './Input';
 
 interface ConnectFormShape {
@@ -21,6 +22,16 @@ interface ConnectRequest {
 interface ConnectResponse {
   ok: boolean;
 }
+
+const ConnectFormContainer = styled.form`
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+
+  & > button {
+    align-self: flex-end;
+  }
+`;
 
 const ConnectForm: ChildComponent = (props) => {
   const {
@@ -37,7 +48,7 @@ const ConnectForm: ChildComponent = (props) => {
   }, []);
 
   return (
-    <form onSubmit={onSubmit}>
+    <ConnectFormContainer onSubmit={onSubmit}>
       <Input
         label="Search for other users or sites"
         id="name"
@@ -45,8 +56,8 @@ const ConnectForm: ChildComponent = (props) => {
         required
         type="text"
       />
-      <button type="submit">ok!</button>
-    </form>
+      <Button type="submit">ok!</Button>
+    </ConnectFormContainer>
   );
 };
 

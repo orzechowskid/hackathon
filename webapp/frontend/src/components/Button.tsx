@@ -9,7 +9,7 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const StyledButton = styled.button`
   padding: 8px;
-  border-radius: 2px;
+  border-radius: 8px;
   color: var(--color-gray-800);
   background-color: var(--color-green-400);
 

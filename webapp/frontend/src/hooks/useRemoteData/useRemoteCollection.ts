@@ -14,7 +14,8 @@ import {
 } from './utils';
 
 export interface RemoteCollectionOpts {
-  swrOpts: SWRConfiguration;
+  createEndpoint?: string;
+  swrOpts?: SWRConfiguration;
 }
 
 const postFetcher = <T extends Collectible>(token: string | null) => (path: RequestInfo, payload: Partial<T>) =>
@@ -59,6 +60,7 @@ const deleteFetcher = <T extends Collectible>(token: string | null) => (path: Re
 
 const useRemoteCollection = function <T extends Collectible>(apiEndpoint: string, opts?: RemoteCollectionOpts) {
   const {
+    createEndpoint = apiEndpoint,
     swrOpts
   } = opts ?? {};
   const {
@@ -77,7 +79,7 @@ const useRemoteCollection = function <T extends Collectible>(apiEndpoint: string
       populateCache: true,
       revalidate: false
     });
-  }, [ token ]);
+  }, [ createEndpoint, token ]);
   const update = useCallback(async (uuid: string, payload: T) => {
     const idx = data?.findIndex((record) => record.uuid === uuid);
     const optimisticData = idx

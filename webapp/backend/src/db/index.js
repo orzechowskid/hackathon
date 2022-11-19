@@ -2,48 +2,14 @@ const {
   Client
 } = require('pg');
 
+const {
+  withoutId
+} = require('../util');
+
+const types = require('../types');
+
 /** @type {Client} */
 let client;
-
-/**
- * @typedef {'follower'|'mutual'|'blocked'|'unconfirmed'} ConnectionStatus
- */
-
-/**
- * @typedef {Object} ConnectionDTO
- * @property {string} host
- * @property {string} token
- * @property {string} created_at
- * @property {ConnectionStatus} status
- */
-
-/**
- * @typedef {Object} PostDTO
- * @property {string} author
- * @property {string} created_at
- * @property {string} [original_host]
- * @property {string} permissions
- * @property {string} text
- * @property {string} title
- * @property {string} uuid
- */
-
-/**
- * @typedef {Object} AuthorDTO
- * @property {string} uuid
- * @property {string} name
- */
-
-/**
- * @typedef {Object} NotificationDTO
- * @property {string} host
- * @property {string} token
- * @property {string} created_at
- */
-
-/** @type {Record<string, any>} */
-const timelines = {
-};
 
 async function initialize() {
   client = new Client({
@@ -54,7 +20,7 @@ async function initialize() {
 }
 
 /**
- * @return {Promise<ConnectionDTO|undefined>}
+ * @return {Promise<types.ConnectionDTO|undefined>}
  */
 const getConnection = async (host) => {
   const q = `
@@ -70,7 +36,7 @@ const getConnection = async (host) => {
 };
 
 /**
- * @return {Promise<ConnectionDTO[]>}
+ * @return {Promise<types.ConnectionDTO[]>}
  */
 const getConnections = async () => {
   const q = `
@@ -84,8 +50,8 @@ const getConnections = async () => {
 }
 
 /**
- * @param {Partial<ConnectionDTO>} connection
- * @return {Promise<ConnectionDTO>}
+ * @param {Partial<types.ConnectionDTO>} connection
+ * @return {Promise<types.ConnectionDTO>}
  */
 const createConnection = async (connection) => {
   const {
@@ -105,11 +71,10 @@ const createConnection = async (connection) => {
 };
 
 /**
- * @param {ConnectionDTO} connection
- * @return {Promise<ConnectionDTO>}
+ * @param {types.ConnectionDTO} connection
+ * @return {Promise<types.ConnectionDTO>}
  */
 const updateConnection = async (connection) => {
-  console.log(`->`, connection);
   const {
     host,
     status,
@@ -126,12 +91,11 @@ const updateConnection = async (connection) => {
   ];
   const result = await client.query(q, values);
 
-  console.log(`->`, {result});
   return result.rows[0];
 };
 
 /**
- * @return {Promise<PostDTO[]>}
+ * @return {Promise<types.TimelineDTO[]>}
  */
 const getPosts = async () => {
   const q = `
@@ -140,25 +104,24 @@ const getPosts = async () => {
     ORDER BY created_at DESC
   `;
   const result = await client.query(q);
-  return result.rows;
+  return result.rows.map(withoutId);
 };
 
 /**
- * @param {Partial<PostDTO>} post
- * @return {Promise<PostDTO>}
+ * @param {Partial<types.PostDTO>} post
+ * @return {Promise<types.PostDTO>}
  */
 const createPost = async (post) => {
   const q = `
-  INSERT INTO posts(author, original_host, permissions, text, title)
-  VALUES($1, $2, $3, $4, $5)
+  INSERT INTO posts(author, original_host, permissions, text)
+  VALUES($1, $2, $3, $4)
   RETURNING *
   `;
   const values = [
     post.author,
     post.original_host,
     post.permissions,
-    post.text,
-    post.title
+    post.text
   ];
   const result = await client.query(q, values);
 
@@ -176,7 +139,7 @@ const upsertAuthor = async () => {
 };
 
 /**
- * @return {Promise<NotificationDTO[]>}
+ * @return {Promise<types.NotificationDTO[]>}
  */
 const getNotifications = async () => {
   const q = `
@@ -191,7 +154,7 @@ const getNotifications = async () => {
 
 /**
  * @param {string} text
- * @return {Promise<NotificationDTO>}
+ * @return {Promise<types.NotificationDTO>}
  */
 const createNotification = async (data) => {
   const {
@@ -210,19 +173,6 @@ const createNotification = async (data) => {
   return result.rows[0];
 };
 
-
-
-
-
-
-
-const getTimelines = async () => timelines;
-const updateTimeline = async (host, items) => {
-  timelines[host] = timelines[host] ?? [];
-  timelines[host].push(...items);
-};
-
-
 module.exports = {
   createConnection,
   createNotification,
@@ -231,9 +181,7 @@ module.exports = {
   getConnections,
   getNotifications,
   getPosts,
-  getTimelines,
   initialize,
   updateConnection,
-  updateTimeline,
   upsertAuthor
 };

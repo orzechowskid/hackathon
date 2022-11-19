@@ -2,6 +2,10 @@ const express = require('express');
 const fetch = require('node-fetch');
 
 const db = require('../db');
+const {
+  ensureHostWithProtocol,
+  ensureHostWithoutProtocol
+} = require('../util');
 
 const router = express.Router();
 
@@ -21,10 +25,17 @@ router.post('/connectrequest', async (req, res) => {
     'x-id': remoteHost,
     'x-jwt': token
   } = req.headers;
-  let connection = await db.getConnection(remoteHost);
+
+  if (!remoteHost || !token) {
+    res.status(400)
+      .end();
+  }
+
+  let hostWithoutProtocol = ensureHostWithoutProtocol(remoteHost);
+  let connection = await db.getConnection(hostWithoutProtocol);
 
   if (connection && connection.status !== 'unconfirmed') {
-    console.log(`${remoteHost} is already a connection`);
+    console.log(`${hostWithoutProtocol} is already a connection`);
     res.status(409)
       .end();
   }
@@ -32,7 +43,7 @@ router.post('/connectrequest', async (req, res) => {
     try {
       if (!connection) {
         connection = await db.createConnection({
-          host: remoteHost,
+          host: hostWithoutProtocol,
           status: 'unconfirmed',
           token
         });
@@ -40,9 +51,10 @@ router.post('/connectrequest', async (req, res) => {
 
       await new Promise(async (resolve, reject) => {
         try {
+          const hostWithProtocol = ensureHostWithProtocol(remoteHost);
           const handle = setTimeout(reject, 10 * 1000);
 
-          const response = await fetch(`https://${remoteHost}/api/1/public/connectconfirm`, {
+          const response = await fetch(`${hostWithProtocol}/api/1/public/connectconfirm`, {
             headers: {
               'X-ID': process.env.NODE_NAME,
               'X-JWT': token
@@ -85,11 +97,18 @@ router.post('/connectconfirm', async (req, res) => {
     'x-jwt': token
   } = req.headers;
 
+  if (!remoteHost || !token) {
+    res.status(400)
+      .end();
+  }
+
+  const hostWithoutProtocol = ensureHostWithoutProtocol(remoteHost);
+
   try {
-    const connection = await db.getConnection(remoteHost);
+    const connection = await db.getConnection(hostWithoutProtocol);
 
     if (!connection) {
-      console.log(`no connection found for ${remoteHost}`);
+      console.log(`no connection found for ${hostWithoutProtocol}`);
       res.status(401)
         .end();
     }
@@ -136,7 +155,15 @@ router.post('/dm', (req, res) => {
   }
 });
 
-router.get('/posts', async (req, res) => {
+router.get('/profile', async (req, res) => {
+  res.status(200)
+    .json({
+      username: process.env.USER_NAME
+    })
+    .end();
+});
+
+router.get('/timeline', async (req, res) => {
   const {
     'x-id': remoteHost,
     'x-jwt': token
@@ -154,13 +181,11 @@ router.get('/posts', async (req, res) => {
     }
     else {
       const posts = await db.getPosts({ limit: 1000 });
-      console.log(`all->`, posts);
       const filterFn = connection?.status === 'follower' || connection?.status === 'mutual'
         ? (post) => post.permissions !== 'private'
         : (post) => post.permissions === 'public';
       const filteredPosts = posts.filter(filterFn);
 
-      console.log(`filtered->`, filteredPosts);
       res.status(200)
         .json(filteredPosts)
         .end();
@@ -171,14 +196,6 @@ router.get('/posts', async (req, res) => {
     res.status(500)
       .end();
   }
-});
-
-router.get('/profile', async (req, res) => {
-  res.status(200)
-    .json({
-      username: process.env.USER_NAME
-    })
-    .end();
 });
 
 module.exports = router;

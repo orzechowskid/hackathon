@@ -8,12 +8,10 @@ CREATE TABLE IF NOT EXISTS posts(
   _id serial PRIMARY KEY,
   uuid UUID NOT NULL DEFAULT gen_random_uuid(),
   author varchar REFERENCES people(name),
-  title varchar NOT NULL,
   text varchar NOT NULL,
   created_at timestamptz NOT NULL DEFAULT NOW(),
-  tags varchar[],
   permissions varchar NOT NULL CHECK (permissions in ( 'public', 'protected', 'private' )),
-  original_host varchar NOT NULL
+  original_host varchar
 );
 
 CREATE TABLE IF NOT EXISTS connections(

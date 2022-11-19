@@ -19,7 +19,6 @@ function sourceEnvFile () {
         ensure $key $val
     done
 
-    ensure NODE_LOCATION $NODE_NAME:$PROXY_SERVER_HTTPS
     ensure USER_ID `id -u`
     ensure GROUP_ID `id -g`
     ensure CONTAINER_HOST_ADDR "host.docker.internal"

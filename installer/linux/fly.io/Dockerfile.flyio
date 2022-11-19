@@ -1,4 +1,4 @@
-# installs the fly.io CLI and copies all files needed for a fly.io cloud deploy
+# Dockerfile for building the fly.io install/deploy image
 #
 # context is repo root
 
