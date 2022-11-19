@@ -1,30 +1,39 @@
 import {
   type ChildComponent,
+  useCallback,
   useEffect
 } from 'react';
+import {
+  FaShareSquare
+} from 'react-icons/fa';
 import styled from 'styled-components';
 
-import {
-  usePrivatePosts
-} from '../hooks/usePosts';
 import {
   type TimelineDTO,
   useTimeline
 } from '../hooks/useTimeline';
+import Button from './Button';
 
-const ExternalHost = styled.span`
+const Origin = styled.div`
   font-size: 14px;
   color: var(--gray-700);
   font-style: italic;
+
+  a + svg {
+    margin: 0 8px 0 12px;
+  }
+
+  > * {
+    color: inherit;
+    font-size: inherit;
+    font-style: inherit;
+    vertical-align: middle;
+  }
 `;
 
 const TimelineItemContainer = styled.div`
   padding: 24px;
   grid-gap: 12px;
-
-  ${ExternalHost} {
-    margin-left: 30px;
-  }
 `;
 
 const TimelineContainer = styled.div`
@@ -35,35 +44,113 @@ const TimelineContainer = styled.div`
   }
 `;
 
-const TimelineItem: ChildComponent<TimelineDTO> = (props) => {
+const PostOrigin: ChildComponent<Partial<TimelineDTO>> = (props) => {
+  const {
+    author = 'unknown',
+    original_host,
+    timeline_host
+  } = props;
+
+  if (original_host && timeline_host) {
+    return (
+      <Origin>
+        <span>
+          {author}@
+        </span>
+        <a
+          href={`https://${timeline_host}`}
+          referrerPolicy="no-referrer"
+          target="_blank"
+        >
+          {timeline_host}
+        </a>
+        <FaShareSquare />
+        <a
+          href={`https://${original_host}`}
+          referrerPolicy="no-referrer"
+          target="_blank"
+        >
+          {original_host}
+        </a>
+      </Origin>
+    );
+  }
+
+  if (original_host && !timeline_host) {
+    return (
+      <Origin>
+        <FaShareSquare />
+        <a
+          href={`https://${original_host}`}
+          referrerPolicy="no-referrer"
+          target="_blank"
+        >
+          {original_host}
+        </a>
+      </Origin>
+    );
+  }
+
+  if (timeline_host && !original_host) {
+    return (
+      <Origin>
+        <span>
+          {author}@
+        </span>
+        <a
+          href={`https://${timeline_host}`}
+          referrerPolicy="no-referrer"
+          target="_blank"
+        >
+          {timeline_host}
+        </a>
+      </Origin>
+    );
+  }
+
+  return (
+    <Origin>
+      <span>
+        me
+      </span>
+    </Origin>
+  );
+};
+
+interface TimelineItemProps {
+  item: TimelineDTO;
+  onShare: (item: TimelineDTO) => void;
+};
+
+const TimelineItem: ChildComponent<TimelineItemProps> = (props) => {
+  const {
+    item,
+    onShare
+  } = props;
   const {
     author,
-    host,
     original_host,
-    text
-  } = props;
-  const ownPost = host
-    ? new URL(host).hostname === window.location.hostname
-    : true;
+    text,
+    timeline_host
+  } = item;
+  const onShareItem = useCallback(() => {
+    onShare?.(item);
+  }, []);
+  const ownPost = !original_host && !timeline_host;
 
   return (
     <TimelineItemContainer>
-      {ownPost ? (
-        <div>{props.author}</div>
-      ) : (
-        <div>
-          <a
-            href={`https://${host}`}
-            target="_blank"
-          >
-            {author}
-          </a>
-          <ExternalHost>
-            {original_host}
-          </ExternalHost>
-        </div>
-      )}
-      <div>{props.text}</div>
+      <PostOrigin {...item} />
+      <div>
+        {text}
+      </div>
+      <div>
+        {!ownPost && (
+          <Button onClick={onShareItem}>
+            share
+          </Button>
+        )}
+      </div>
     </TimelineItemContainer>
   );
 };
@@ -74,8 +161,20 @@ const Timeline: ChildComponent = (props) => {
     refresh
   } = useTimeline();
   const {
-    data: posts
-  } = usePrivatePosts();
+    data: posts,
+    create
+  } = useTimeline();
+  const onShare = useCallback(async (item: TimelineDTO) => {
+    try {
+      await create({
+        ...item,
+        uuid: ''
+      });
+    }
+    catch (ex: any) {
+      alert(ex.message);
+    }
+  }, [ create ]);
 
   useEffect(() => {
     refresh();
@@ -85,8 +184,9 @@ const Timeline: ChildComponent = (props) => {
     <TimelineContainer>
       {timelineEntries?.map((item) => (
         <TimelineItem
-          key={item.uuid}
-          {...item}
+          key={item.uuid ?? ''}
+          item={item}
+          onShare={onShare}
         />
       ))}
     </TimelineContainer>

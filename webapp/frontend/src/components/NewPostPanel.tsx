@@ -6,9 +6,8 @@ import {
 } from 'react';
 import styled from 'styled-components';
 import {
-  type PostDTO,
-  usePrivatePosts
-} from '../hooks/usePosts';
+  useTimeline
+} from '../hooks/useTimeline';
 
 import Button from './Button';
 import Input from './Input';
@@ -50,7 +49,7 @@ const NewPostPanel: ChildComponent<NewPostPanelProps> = (props) => {
   const {
     create,
     error
-  } = usePrivatePosts();
+  } = useTimeline();
   const [ showForm, setShowForm ] = useState<boolean>(false);
   const [ formError, setFormError ] = useState<string>();
   const onClick = useCallback(() => { setShowForm(true); }, []);
@@ -66,7 +65,6 @@ const NewPostPanel: ChildComponent<NewPostPanelProps> = (props) => {
     try {
       const result = await create({
         permissions: 'public',
-        tags: [],
         text: text.value
       });
 
@@ -82,7 +80,9 @@ const NewPostPanel: ChildComponent<NewPostPanelProps> = (props) => {
   return (
     <NewPostContainer {...otherProps}>
       <div>
-        <Button onClick={onClick}>new post?</Button>
+        <Button onClick={onClick}>
+          new post
+        </Button>
       </div>
       {showForm && (
         <NewPostFormContainer onSubmit={onSubmit}>

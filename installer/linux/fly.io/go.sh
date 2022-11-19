@@ -13,9 +13,14 @@ fly version update
 echo "...done"
 echo
 
-if [ "$1" == "--upgrade" ]; then
-    echo "upgrading"
-    exit 1
+if [ "$1" == "upgrade" ]; then
+    echo "upgrading $2..."
+    fly deploy \
+        --region lax \
+        --remote-only \
+        --app $2
+
+    exit 0
 fi
 
 echo

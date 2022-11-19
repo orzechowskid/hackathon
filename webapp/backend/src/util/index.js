@@ -1,17 +1,28 @@
 const fetch = require('node-fetch');
 
-const db = require('../db');
+const types = require('../types');
 
 /**
- * @typedef {Object} PublicPostDTOAttrs
- * @property {string} host
- *
- * @typedef {PublicPostDTOAttrs & db.PostDTO} PublicPostDTO
+ * @param {string} host
+ * @return {string}
  */
+function ensureHostWithProtocol(host) {
+  return host.includes('://')
+    ? host
+    : `https://${host}`;
+}
 
 /**
- * @param {db.ConnectionDTO} connection
- * @return {Promise<db.PublicPostDTO[]>}
+ * @param {string} host
+ * @return {string}
+ */
+function ensureHostWithoutProtocol(host) {
+  return host.split('://').at(-1);
+}
+
+/**
+ * @param {types.ConnectionDTO} connection
+ * @return {Promise<types.TimelineDTO[]>}
  */
 function getConnectionPosts(connection) {
   const {
@@ -23,42 +34,59 @@ function getConnectionPosts(connection) {
     const rejectHandle = setTimeout(reject, connection.timeout ?? 10000);
 
     try {
-      const response = await fetch(`https://${host}/api/1/public/posts`, {
+      const response = await fetch(`https://${host}/api/1/public/timeline`, {
         headers: {
           'X-Id': process.env.NODE_NAME,
           'X-JWT': token
         }
       });
-      /** @type {db.PostDTO[]} */
+      /** @type {types.TimelineDTO[]} */
       const result = await response.json();
 
       clearTimeout(rejectHandle);
       resolve(result.map((result) => ({
         ...result,
-        host
+        timeline_host: host
       })));
     }
     catch (ex) {
+      console.log(ex?.message ?? ex ?? 'unknown error in getConnectionPosts');
       clearTimeout(rejectHandle);
-      //      reject(ex);
       resolve([]);
     }
   });
 }
 
-async function refreshTimeline() {
-  const connections = await db.getConnections();
+/**
+ * @param {types.ConnectionDTO[]} connections
+ */
+async function refreshTimeline(connections) {
+  const results = await Promise.allSettled(connections.map(getConnectionPosts));
 
-  try {
-    return Promise.all(connections.map(getConnectionPosts));
-  }
-  catch (ex) {
-    console.log(ex?.message ?? 'unknown error in refreshTimeline');
+  return results.map((obj) => obj.value ?? []);
+}
 
-    return [];
+/**
+ * @param {types.DBRecord<T>} obj
+ * @returns {T}
+ * @template T
+ */
+function withoutId(obj) {
+  if (!obj) {
+    return null;
   }
+  
+  const {
+    _id,
+    ...otherProps
+  } = obj;
+
+  return otherProps;
 }
 
 module.exports = {
-  refreshTimeline
+  ensureHostWithProtocol,
+  ensureHostWithoutProtocol,
+  refreshTimeline,
+  withoutId
 };

@@ -90,7 +90,7 @@ case $TARGET in
         exitWith 1
         ;;
     *)
-        echo "Invalid (or no) host provided; can't continue"
+        echo "Invalid (or no) hosting provider specified; can't continue"
         echo
         exitWith 1
         ;;

@@ -23,11 +23,6 @@ interface ExploreDTO {
   users: string[];
 }
 
-const StyledQR = styled(QR)`
-  width: 64px;
-  height: 64px;
-`;
-
 const TitleTextContainer = styled.div`
   div:first-child {
     font-size: 24px;
@@ -99,7 +94,7 @@ const TitleText = () => {
       <PageTitle>
         {user ? user.username : ''}
       </PageTitle>
-      <div>{window.location.hostname}</div>
+      <div>{window.location.host}</div>
     </TitleTextContainer>
   );
 };
@@ -157,7 +152,10 @@ const Sidebar = () => {
         <h2>
           Share
         </h2>
-        <StyledQR value={window.location.host} />
+        <QR
+          size={120}
+          value={window.location.href}
+        />
       </section>
       <ExploreForm />
     </SidebarContainer>

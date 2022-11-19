@@ -33,7 +33,7 @@ app.listen(+process.env.PORT, async () => {
   }
 
   upsertAuthor();
-  console.log(`ready on ${process.env.PORT}`);
+  console.log(`${process.env.NODE_NAME} ready on ${process.env.PORT}`);
 });
 process.once('SIGTERM', () => {
   process.exit(2);

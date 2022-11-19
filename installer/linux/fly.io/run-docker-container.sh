@@ -9,7 +9,7 @@ else
 fi
 
 if [ "$1" == "upgrade" ]; then
-    docker run --rm -e FLY_ACCESS_TOKEN=$FLY_ACCESS_TOKEN alewife-installer-flyio:latest go.sh --upgrade
+    docker run --rm -e FLY_ACCESS_TOKEN=$FLY_ACCESS_TOKEN alewife-installer-flyio:latest upgrade $2
 else
     docker run --rm -e FLY_ACCESS_TOKEN=$FLY_ACCESS_TOKEN alewife-installer-flyio:latest
 fi

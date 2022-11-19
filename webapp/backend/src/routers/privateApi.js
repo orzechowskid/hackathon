@@ -6,6 +6,8 @@ const {
 
 const db = require('../db');
 const {
+  ensureHostWithProtocol,
+  ensureHostWithoutProtocol,
   refreshTimeline
 } = require('../util');
 
@@ -28,7 +30,6 @@ router.post('/connect', async (req, res) => {
   const {
     host
   } = req.body;
-  const connection = await db.getConnection(host);
 
   if (!host) {
     res.status(400)
@@ -36,7 +37,11 @@ router.post('/connect', async (req, res) => {
 
     return;
   }
-  else if (connection) {
+
+  const hostWithoutProtocol = ensureHostWithoutProtocol(host);
+  const connection = await db.getConnection(hostWithoutProtocol);
+
+  if (connection) {
     res.status(409)
       .end();
 
@@ -46,8 +51,9 @@ router.post('/connect', async (req, res) => {
   try {
     const result = await new Promise(async (resolve, reject) => {
       try {
+        const hostWithProtocol = ensureHostWithProtocol(host);
         const handle = setTimeout(reject, 10 * 1000);
-        let existingConnection = await db.getConnection(host);
+        let existingConnection = await db.getConnection(hostWithoutProtocol);
 
         if (existingConnection && existingConnection.status !== 'unconfirmed') {
           console.log('existing non-pending connection');
@@ -57,12 +63,12 @@ router.post('/connect', async (req, res) => {
         }
         else if (!existingConnection) {
           existingConnection = await db.createConnection({
-            host,
+            host: hostWithoutProtocol,
             status: 'unconfirmed',
             token: uuid()
           });
         }
-        const response = await fetch(`https://${host}/api/1/public/connectrequest`, {
+        const response = await fetch(`${hostWithProtocol}/api/1/public/connectrequest`, {
           headers: {
             'X-ID': process.env.NODE_NAME,
             'X-JWT': existingConnection.token
@@ -86,6 +92,7 @@ router.post('/connect', async (req, res) => {
         resolve(updatedConnection);
       }
       catch (ex) {
+        console.log({ex});
         reject(ex);
       }
     });
@@ -98,7 +105,8 @@ router.post('/connect', async (req, res) => {
       await db.createNotification({
         text: `you are now following ${host}`,
       });
-      refreshTimeline();
+      const allConnections = await db.getConnections();
+      refreshTimeline(allConnections);
       res.status(200)
         .json({ ok: true })
         .end();
@@ -144,70 +152,58 @@ router.get('/notifications/stats', async (req, res) => {
   .end();
 });
 
-router.get('/posts', async (req, res) => {
-  try {
-    const posts = await db.getPosts({
-      limit: 1000
-    });
-
-    res.status(200)
-      .json(posts)
-      .end();
-  }
-  catch (ex) {
-    console.error(ex.message);
-    res.status(500)
-      .end();
-  }
-});
-
-router.post('/posts', async (req, res) => {
-  const {
-    permissions,
-    tags,
-    text
-  } = req.body;
-
-  if (!permissions || !tags || !text) {
-    res.status(400).end();
-  }
-  else {
-    try {
-      const newPost = await db.createPost({
-        author: process.env.USER_NAME,
-        original_host: process.env.NODE_NAME,
-        permissions,
-        tags,
-        text,
-        title: '(untitled)'
-      });
-
-      res.status(201)
-        .json(newPost)
-        .end();
-    }
-    catch (ex) {
-      console.error(ex.message);
-      res.status(500)
-        .end();
-    }
-  }
-});
-
 router.get('/timeline', async (req, res) => {
   const posts = await db.getPosts({
     limit: 1000
   });
-  const timelines = await refreshTimeline();
+  const connections = await db.getConnections();
+  const timelines = await refreshTimeline(connections);
   const recentPosts = [
     ...posts,
     ...Object.values(timelines).flatMap((x) => x)
-  ].sort((a, b) => b.published - a.published) // desc
-    .slice(0, 50);
+  ].sort(
+    (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  ).slice(0, 50);
 
   res.status(200)
     .json(recentPosts)
     .end();
+});
+
+router.post('/timeline', async (req, res) => {
+  /** @type {Partial<db.TimelineDTO>} */
+  const {
+    author,
+    host,
+    original_host,
+    permissions,
+    text
+  } = req.body;
+
+  if (!permissions || !text) {
+    res.status(400)
+      .end();
+
+    return;
+  }
+
+  try {
+    const newPost = await db.createPost({
+      author: process.env.USER_NAME,
+      original_host,
+      permissions,
+      text
+    });
+
+    res.status(201)
+      .json(newPost)
+      .end();
+  }
+  catch (ex) {
+      console.error(ex.message);
+      res.status(500)
+        .end();
+    }
 });
 
 module.exports = router;

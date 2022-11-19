@@ -24,7 +24,7 @@ services:
     environment:
       - DB_CONNECTION_STRING=postgres://${PGUSER}:${PGPASSWORD}@${CONTAINER_HOST_ADDR}:${PGPORT}/${PGDATABASE}
       - JWT_SECRET=${BACKEND_JWT_SECRET}
-      - NODE_NAME=${NODE_LOCATION}
+      - NODE_NAME
       - PORT=${BACKEND_PORT}
       - USER_NAME
     extra_hosts:
