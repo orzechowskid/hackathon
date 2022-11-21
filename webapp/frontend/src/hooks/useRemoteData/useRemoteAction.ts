@@ -1,5 +1,6 @@
 import {
-  useCallback
+  useCallback,
+  useState,
 } from 'react';
 
 import {
@@ -10,24 +11,36 @@ const useRemoteAction = function<ResponsePayload extends object, RequestPayload 
   const {
     token
   } = useIdentity();
+  const [ busy, setBusy ] = useState<boolean>(false);
   const execute = useCallback(async (payload?: RequestPayload, initOpts?: RequestInit) => {
-    const response = await window.fetch(apiEndpoint, {
-      method: 'POST',
-      ...(payload ? { body: JSON.stringify(payload) } : {}),
-      ...(initOpts ?? {}),
-      headers: {
-        ...(initOpts?.headers ?? {}),
-        ...(payload ? { 'Content-Type': 'application/json' } : {}),
-        ...(token ? { 'X-JWT': token } : {})
-      }
-    });
+    try {
+      setBusy(true);
 
-    if (response.headers.get('Content-Type') === 'application/json') {
-      return response.json() as Promise<ResponsePayload>;
+      const response = await window.fetch(apiEndpoint, {
+        method: 'POST',
+        ...(payload ? { body: JSON.stringify(payload) } : {}),
+        ...(initOpts ?? {}),
+        headers: {
+          ...(initOpts?.headers ?? {}),
+          ...(payload ? { 'Content-Type': 'application/json' } : {}),
+          ...(token ? { 'X-JWT': token } : {})
+        }
+      });
+
+      if (response.headers.get('Content-Type') === 'application/json') {
+        return response.json() as Promise<ResponsePayload>;
+      }
+
+      setBusy(false);
+    }
+    catch (ex) {
+      setBusy(false);
+      throw (ex);
     }
   }, [ token ]);
 
   return {
+    busy,
     execute
   };
 };

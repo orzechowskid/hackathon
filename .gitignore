@@ -1,6 +1,7 @@
 node_modules/
 webapp/frontend/dist/
-webapp/db/storage/*
+webapp/devtools/db-storage/*
+webapp/devtools/fake-ca/domains/*
 .log/
 .cache/
 *~

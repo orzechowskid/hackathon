@@ -69,6 +69,7 @@ const useRemoteCollection = function <T extends Collectible>(apiEndpoint: string
   const {
     data,
     error,
+    isValidating,
     mutate
   } = useSWR<T[]>(apiEndpoint, getFetcher<T[]>(token), swrOpts);
   const create = useCallback(async (newObject: Partial<T>) => {
@@ -106,6 +107,7 @@ const useRemoteCollection = function <T extends Collectible>(apiEndpoint: string
   }, [ token ]);
 
   return {
+    busy: isValidating,
     create,
     data,
     error,

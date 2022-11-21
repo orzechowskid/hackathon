@@ -84,9 +84,35 @@ function withoutId(obj) {
   return otherProps;
 }
 
+/**
+ * @param {string} host
+ * @param {string} token
+ * @param {string} message
+ * @return {Promise<void>}
+ */
+async function sendNotification(host, token, message) {
+  try {
+    const response = await fetch(`https://${host}/api/1/public/notifications`, {
+      body: JSON.stringify({ text: message }),
+      headers: {
+        'Content-Type': 'application/json',
+        'X-ID': process.env.NODE_NAME,
+        'X-JWT': token
+      },
+      method: 'POST'
+    });
+
+    return response.json();
+  }
+  catch (ex) {
+    console.log(ex?.message ?? ex ?? 'unknown error in sendNotification()');
+  }
+}
+
 module.exports = {
   ensureHostWithProtocol,
   ensureHostWithoutProtocol,
   refreshTimeline,
+  sendNotification,
   withoutId
 };

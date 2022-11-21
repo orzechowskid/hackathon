@@ -2,6 +2,7 @@ const express = require('express');
 const fetch = require('node-fetch');
 
 const db = require('../db');
+const types = require('../types');
 const {
   ensureHostWithProtocol,
   ensureHostWithoutProtocol
@@ -133,26 +134,74 @@ router.post('/connectconfirm', async (req, res) => {
   }
 });
 
-router.post('/dm', (req, res) => {
+router.post('/dms', async (req, res) => {
   const {
-    'x-id': remoteHost
+    'x-id': remoteHost,
+    'x-jwt': token
   } = req.headers;
 
-  if (!remoteHost) {
+  if (!remoteHost || !token) {
     res.status(400)
       .end();
+
+    return;
   }
-  else {
-    notifications.push({
-      createdAt: Date.now(),
-      id: uuid(),
-      message: `${remoteHost} has sent you a DM`,
-      new: true
-    });
-    res.status(201)
-      .json({ ok: true })
+
+  const connection = await db.getConnection(remoteHost);
+
+  if (!connection || connection.token !== token) {
+    res.status(403)
       .end();
+
+    return;
   }
+  else if (connection?.status === 'blocked') {
+    res.status(200)
+      .end();
+
+    return;
+  }
+
+  await db.createNotification(`${remoteHost} has sent you a DM`);
+
+  res.status(200)
+    .json({ ok: true });
+});
+
+router.post('/notifications', async (req, res) => {
+  const {
+    'x-id': remoteHost,
+    'x-jwt': token
+  } = req.headers;
+
+  if (!remoteHost || !token) {
+    res.status(400)
+      .end();
+
+    return;
+  }
+
+  const connection = await db.getConnection(remoteHost);
+
+  if (!connection || connection.token !== token) {
+    res.status(403)
+      .end();
+
+    return;
+  }
+  else if (connection?.status === 'blocked' || connection?.status === 'unconfirmed') {
+    res.status(200)
+      .end();
+
+    return;
+  }
+
+  /** @type {types.ExternalNotificationDTO} */
+  const {
+    text
+  } = req.body;
+
+  await db.createNotification(text);
 });
 
 router.get('/profile', async (req, res) => {

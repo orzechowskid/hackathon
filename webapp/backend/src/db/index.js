@@ -108,20 +108,23 @@ const getPosts = async () => {
 };
 
 /**
- * @param {Partial<types.PostDTO>} post
- * @return {Promise<types.PostDTO>}
+ * @param {Partial<types.TimelineDTO>} post
+ * @return {Promise<types.TimelineDTO>}
  */
 const createPost = async (post) => {
   const q = `
-  INSERT INTO posts(author, original_host, permissions, text)
-  VALUES($1, $2, $3, $4)
+  INSERT INTO posts(author, permissions, text, original_author, original_created_at, original_host, original_uuid)
+  VALUES($1, $2, $3, $4, $5, $6, $7)
   RETURNING *
   `;
   const values = [
     post.author,
-    post.original_host,
     post.permissions,
-    post.text
+    post.text,
+    post.original_author,
+    post.original_created_at,
+    post.original_host,
+    post.original_uuid
   ];
   const result = await client.query(q, values);
 
@@ -156,10 +159,7 @@ const getNotifications = async () => {
  * @param {string} text
  * @return {Promise<types.NotificationDTO>}
  */
-const createNotification = async (data) => {
-  const {
-    text
-  } = data;
+const createNotification = async (text) => {
   const q = `
     INSERT INTO notifications(text)
     VALUES($1)
@@ -173,6 +173,19 @@ const createNotification = async (data) => {
   return result.rows[0];
 };
 
+const getTimeline = async () => {
+  const q = `
+    SELECT *
+    FROM posts
+    WHERE original_host IS NULL
+    ORDER BY created_at DESC
+    LIMIT 1
+  `;
+  const result = await client.query(q);
+
+  return result.rows.map(withoutId);
+};
+
 module.exports = {
   createConnection,
   createNotification,
@@ -181,6 +194,7 @@ module.exports = {
   getConnections,
   getNotifications,
   getPosts,
+  getTimeline,
   initialize,
   updateConnection,
   upsertAuthor
