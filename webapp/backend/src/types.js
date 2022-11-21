@@ -9,6 +9,9 @@
  */
 
 /**
+ * @typedef {'public' | 'protected' | 'private' } PostVisibility
+ */
+/**
  * @typedef {'follower'|'mutual'|'blocked'|'unconfirmed'} ConnectionStatus
  */
 
@@ -24,8 +27,12 @@
  * @typedef {Object} TimelineDTO
  * @property {string} author
  * @property {string} created_at
+ * @property {string} [original_author]
+ * @property {string} [original_created_at]
  * @property {string} [original_host]
- * @property {string} permissions
+ * @property {string} [original_uuid]
+ * @property {PostVisibility} permissions
+ * @property {number} score
  * @property {string} text
  * @property {string} [timeline_host]
  * @property {string} uuid
@@ -40,9 +47,14 @@
  */
 
 /**
+ * @typedef {Object} ExternalNotificationDTO
+ * @property {string} text
+ */
+
+/**
  * @typedef {Object} NotificationDTO
  * @property {string} host
- * @property {string} token
+ * @property {string} message
  * @property {string} created_at
  */
 

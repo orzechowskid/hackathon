@@ -11,7 +11,11 @@ CREATE TABLE IF NOT EXISTS posts(
   text varchar NOT NULL,
   created_at timestamptz NOT NULL DEFAULT NOW(),
   permissions varchar NOT NULL CHECK (permissions in ( 'public', 'protected', 'private' )),
-  original_host varchar
+  original_host varchar,
+  original_author varchar,
+  original_uuid UUID,
+  original_created_at timestamptz,
+  score integer NOT NULL DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS connections(

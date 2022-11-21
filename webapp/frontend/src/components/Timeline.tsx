@@ -46,16 +46,19 @@ const TimelineContainer = styled.div`
 
 const PostOrigin: ChildComponent<Partial<TimelineDTO>> = (props) => {
   const {
-    author = 'unknown',
+    author,
     original_host,
     timeline_host
   } = props;
+  const authorName = (!author || author === '')
+    ? 'unknown'
+    : author;
 
   if (original_host && timeline_host) {
     return (
       <Origin>
         <span>
-          {author}@
+          {authorName}&nbsp;@&nbsp;
         </span>
         <a
           href={`https://${timeline_host}`}
@@ -95,7 +98,7 @@ const PostOrigin: ChildComponent<Partial<TimelineDTO>> = (props) => {
     return (
       <Origin>
         <span>
-          {author}@
+          {authorName}&nbsp;@&nbsp;
         </span>
         <a
           href={`https://${timeline_host}`}
@@ -128,7 +131,6 @@ const TimelineItem: ChildComponent<TimelineItemProps> = (props) => {
     onShare
   } = props;
   const {
-    author,
     original_host,
     text,
     timeline_host
@@ -157,31 +159,21 @@ const TimelineItem: ChildComponent<TimelineItemProps> = (props) => {
 
 const Timeline: ChildComponent = (props) => {
   const {
+    create,
     data: timelineEntries,
-    refresh
-  } = useTimeline();
-  const {
-    data: posts,
-    create
+    share
   } = useTimeline();
   const onShare = useCallback(async (item: TimelineDTO) => {
     try {
-      await create({
-        ...item,
-        uuid: ''
-      });
+      await share(item);
     }
     catch (ex: any) {
       alert(ex.message);
     }
   }, [ create ]);
 
-  useEffect(() => {
-    refresh();
-  }, [ posts ]);
-
   return (
-    <TimelineContainer>
+    <TimelineContainer {...props}>
       {timelineEntries?.map((item) => (
         <TimelineItem
           key={item.uuid ?? ''}

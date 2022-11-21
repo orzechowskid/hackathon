@@ -5,10 +5,12 @@ const {
 } = require('uuid');
 
 const db = require('../db');
+const types = require('../types');
 const {
   ensureHostWithProtocol,
   ensureHostWithoutProtocol,
-  refreshTimeline
+  refreshTimeline,
+  sendNotification
 } = require('../util');
 
 const router = express.Router();
@@ -153,7 +155,7 @@ router.get('/notifications/stats', async (req, res) => {
 });
 
 router.get('/timeline', async (req, res) => {
-  const posts = await db.getPosts({
+  const posts = await db.getTimeline({
     limit: 1000
   });
   const connections = await db.getConnections();
@@ -173,11 +175,10 @@ router.get('/timeline', async (req, res) => {
 router.post('/timeline', async (req, res) => {
   /** @type {Partial<db.TimelineDTO>} */
   const {
-    author,
-    host,
     original_host,
     permissions,
-    text
+    text,
+    uuid
   } = req.body;
 
   if (!permissions || !text) {
@@ -191,6 +192,7 @@ router.post('/timeline', async (req, res) => {
     const newPost = await db.createPost({
       author: process.env.USER_NAME,
       original_host,
+      original_uuid: uuid,
       permissions,
       text
     });
@@ -204,6 +206,76 @@ router.post('/timeline', async (req, res) => {
       res.status(500)
         .end();
     }
+});
+
+router.post('/timeline/share', async (req, res) => {
+  /** @type {types.TimelineDTO} */
+  const {
+    author,
+    created_at,
+    original_author,
+    original_created_at,
+    original_host,
+    original_timeline_host,
+    original_uuid,
+    permissions,
+    timeline_host,
+    uuid,
+    ...content
+  } = req.body;
+
+  if (permissions !== 'public') {
+    res.status(409)
+      .end();
+
+    return;
+  }
+
+  try {
+    console.log({
+      ...content,
+      author: process.env.USER_NAME,
+      /* original_ fields are empty if this is the first share */
+      original_author: original_author ?? author,
+      original_created_at: original_created_at ?? created_at,
+      original_host: original_host ?? timeline_host,
+      original_uuid: original_uuid ?? uuid,
+      permissions
+    });
+    
+    const sharedPost = await db.createPost({
+      ...content,
+      author: process.env.USER_NAME,
+      /* original_ fields are empty if this is the first share */
+      original_author: original_author ?? author,
+      original_created_at: original_created_at ?? created_at,
+      original_host: original_host ?? timeline_host,
+      original_uuid: original_uuid ?? uuid,
+      permissions
+    });
+
+    /* inform our connection that we're sharing their post */
+    if (!original_host) {
+      /* non-blocking promise chain */
+      db.getConnection(timeline_host)
+        .then((connection) => {
+          return sendNotification(timeline_host, connection.token, 'aaa');
+        })
+        .catch((ex) => {
+          console.log(ex?.message ?? ex ?? 'unknown error in sendNotification at /timeline/share');
+        });
+    }
+
+    res.status(200)
+      .json(sharedPost)
+      .end();
+  }
+  catch (ex) {
+    console.log(ex?.message ?? ex ?? 'unknown error at /timeline/share');
+
+    res.status(500)
+      .end();
+  }
 });
 
 module.exports = router;

@@ -3,6 +3,7 @@
 pushd `dirname $(realpath $0)` > /dev/null
 
 : "${ALEWIFE_ENV:=development}"
+export ALEWIFE_ENV=$ALEWIFE_ENV
 # TODO: add entry to /etc/hosts
 
 echo ALEWIFE_ENV is $ALEWIFE_ENV

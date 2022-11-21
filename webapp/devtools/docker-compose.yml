@@ -11,7 +11,7 @@ services:
       - ${PGPORT}:5432
     volumes:
       - "../db/create.sql:/docker-entrypoint-initdb.d/create_tables.sql"
-      - "../db/storage/${ALEWIFE_ENV}:/var/lib/postgresql/data"
+      - "../devtools/db-storage/${ALEWIFE_ENV}:/var/lib/postgresql/data"
 
   backend:
     build:
@@ -24,14 +24,20 @@ services:
     environment:
       - DB_CONNECTION_STRING=postgres://${PGUSER}:${PGPASSWORD}@${CONTAINER_HOST_ADDR}:${PGPORT}/${PGDATABASE}
       - JWT_SECRET=${BACKEND_JWT_SECRET}
+      - NODE_EXTRA_CA_CERTS=/etc/root-ca.pem
       - NODE_NAME
       - PORT=${BACKEND_PORT}
       - USER_NAME
     extra_hosts:
       - ${CONTAINER_HOST_ADDR}:host-gateway
+      - development.alewife.io:host-gateway
+      - dev2.alewife.io:host-gateway
+      - dev3.alewife.io:host-gateway
     image: alewife-backend
     ports:
       - ${BACKEND_PORT}:${BACKEND_PORT}
+    volumes:
+      - "./fake-ca/root-ca/crt.pem:/etc/root-ca.pem"
 
   frontend:
     build:
