@@ -8,17 +8,11 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 };
 
 const StyledButton = styled.button`
-  padding: 8px;
-  border-radius: 8px;
-  color: var(--color-gray-800);
-  background-color: var(--color-green-400);
+  background-color: transparent;
+  color: var(--color-body-text);
 
-  &:hover {
-    background-color: var(--color-green-500);
-  }
-
-  &:active {
-    background-color: var(--color-green-300);
+  &[disabled] {
+    color: var(--color-button-disabled);
   }
 `;
 
@@ -28,4 +22,4 @@ const Button: ParentComponent<ButtonProps> = (props) => {
   );
 };
 
-export default Button;
+export default styled(Button)``;

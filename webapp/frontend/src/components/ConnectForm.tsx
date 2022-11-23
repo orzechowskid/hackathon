@@ -26,7 +26,6 @@ interface ConnectResponse {
 const ConnectFormContainer = styled.form`
   display: flex;
   flex-direction: column;
-  padding: 16px;
 
   & > button {
     align-self: flex-end;
