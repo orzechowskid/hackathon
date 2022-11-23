@@ -1,9 +1,9 @@
 import {
   type ChildComponent,
-  useCallback,
-  useEffect
+  useCallback
 } from 'react';
 import {
+    FaCaretUp,
   FaShareSquare
 } from 'react-icons/fa';
 import styled from 'styled-components';
@@ -14,26 +14,49 @@ import {
 } from '../hooks/useTimeline';
 import Button from './Button';
 
-const Origin = styled.div`
+const TimelineItemButton = styled(Button)`
+  padding: 4px;
+
+  svg {
+    transition: transform 0.2s;
+    transform: none;
+  }
+
+  > * {
+    vertical-align: middle;
+  }
+
+  &:not([disabled]):hover svg {
+    transform: scale(1.2);
+  }
+`;
+
+const BylineContainer = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   font-size: 14px;
   color: var(--gray-700);
   font-style: italic;
 
-  a + svg {
-    margin: 0 8px 0 12px;
+  div:first-of-type {
+    margin-right: 8px;
   }
 
-  > * {
-    color: inherit;
-    font-size: inherit;
-    font-style: inherit;
+  svg {
     vertical-align: middle;
+    color: var(--color-gray-300);
   }
 `;
 
 const TimelineItemContainer = styled.div`
-  padding: 24px;
+  display: flex;
+  flex-direction: column;
   grid-gap: 12px;
+
+  ${TimelineItemButton} + ${TimelineItemButton} {
+    margin-left: 20px;
+  }
 `;
 
 const TimelineContainer = styled.div`
@@ -44,7 +67,7 @@ const TimelineContainer = styled.div`
   }
 `;
 
-const PostOrigin: ChildComponent<Partial<TimelineDTO>> = (props) => {
+const Byline: ChildComponent<Partial<TimelineDTO>> = (props) => {
   const {
     author,
     original_host,
@@ -56,47 +79,49 @@ const PostOrigin: ChildComponent<Partial<TimelineDTO>> = (props) => {
 
   if (original_host && timeline_host) {
     return (
-      <Origin>
-        <span>
+      <BylineContainer>
+        <div>
           {authorName}&nbsp;@&nbsp;
-        </span>
-        <a
-          href={`https://${timeline_host}`}
-          referrerPolicy="no-referrer"
-          target="_blank"
-        >
-          {timeline_host}
-        </a>
-        <FaShareSquare />
-        <a
-          href={`https://${original_host}`}
-          referrerPolicy="no-referrer"
-          target="_blank"
-        >
-          {original_host}
-        </a>
-      </Origin>
+          <a
+            href={`https://${timeline_host}`}
+            referrerPolicy="no-referrer"
+            target="_blank"
+          >
+            {timeline_host}
+          </a>
+        </div>
+        <div>
+          <FaShareSquare />
+          <a
+            href={`https://${original_host}`}
+            referrerPolicy="no-referrer"
+            target="_blank"
+          >
+            {original_host}
+          </a>
+        </div>
+      </BylineContainer>
     );
   }
 
   if (original_host && !timeline_host) {
     return (
-      <Origin>
+      <BylineContainer>
         <FaShareSquare />
-        <a
+        &nbsp;<a
           href={`https://${original_host}`}
           referrerPolicy="no-referrer"
           target="_blank"
         >
           {original_host}
         </a>
-      </Origin>
+      </BylineContainer>
     );
   }
 
   if (timeline_host && !original_host) {
     return (
-      <Origin>
+      <BylineContainer>
         <span>
           {authorName}&nbsp;@&nbsp;
         </span>
@@ -107,16 +132,16 @@ const PostOrigin: ChildComponent<Partial<TimelineDTO>> = (props) => {
         >
           {timeline_host}
         </a>
-      </Origin>
+      </BylineContainer>
     );
   }
 
   return (
-    <Origin>
+    <BylineContainer>
       <span>
         me
       </span>
-    </Origin>
+    </BylineContainer>
   );
 };
 
@@ -142,15 +167,20 @@ const TimelineItem: ChildComponent<TimelineItemProps> = (props) => {
 
   return (
     <TimelineItemContainer>
-      <PostOrigin {...item} />
+      <Byline {...item} />
       <div>
         {text}
       </div>
       <div>
         {!ownPost && (
-          <Button onClick={onShareItem}>
-            share
-          </Button>
+          <>
+            <TimelineItemButton onClick={onShareItem}>
+              <FaShareSquare />&nbsp;share
+            </TimelineItemButton>
+            <TimelineItemButton>
+              <FaCaretUp />&nbsp;upvote
+            </TimelineItemButton>
+          </>
         )}
       </div>
     </TimelineItemContainer>
@@ -185,4 +215,4 @@ const Timeline: ChildComponent = (props) => {
   );
 };
 
-export default Timeline;
+export default styled(Timeline)``;

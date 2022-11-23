@@ -3,25 +3,12 @@ import {
 } from 'react-router';
 import styled from 'styled-components';
 
-import alewifeLogo from '/alewife.svg';
-
-import ConnectForm from './components/ConnectForm';
-import {
-  PageTitle
-} from './components/Heading';
+import Logo from './components/Logo';
 import NewPostPanel from './components/NewPostPanel';
-import QR from './components/QR';
-import {
-  useIdentity
-} from './hooks/useIdentity';
-import {
-  useRemoteData
-} from './hooks/useRemoteData';
-
-interface ExploreDTO {
-  topics: string[];
-  users: string[];
-}
+import PageTitle from './components/PageTitle';
+import Sidebar from './components/Sidebar';
+import SiteLocation from './components/SiteLocation';
+import Timeline from './components/Timeline';
 
 const TitleTextContainer = styled.div`
   div:first-child {
@@ -35,141 +22,92 @@ const TitleTextContainer = styled.div`
   }
 `;
 
-const SidebarContainer = styled.div`
-`;
-
 const NewPostContainer = styled(NewPostPanel)``;
 
 const AppContainer = styled.div`
+  margin: 0;
   flex-grow: 1;
   display: grid;
-  grid-template-rows: max-content max-content 1fr;
-  grid-template-columns: 25vw 1fr;
   grid-gap: 24px;
-  padding: 24px;
-  background-color: var(--color-gray-800);
+  grid-template-columns: 24px 1fr;
+  grid-template-rows: max-content 1fr 96px;
+  align-items: baseline;
 
-  ${TitleTextContainer} {
+  ${Logo} {
+    grid-row: 1;
+    grid-column: 1;
+    width: 24px;
+    height: 24px;
+  }
+
+  ${PageTitle} {
     grid-row: 1;
     grid-column: 2;
   }
   
-  > a:has(img) {
-    grid-row: 1;
-    grid-column: 1;
-
-    img {
-      width: 80px;
-    }
+  ${SiteLocation} {
+    display: none;
   }
 
-  ${SidebarContainer} {
-    grid-row: 2 / span 2;
-    grid-column: 1;
+  ${Sidebar} {
+    grid-row: 3;
+    grid-column: 1 / span 2;
+    align-self: normal;
+    overflow-y: auto;
+  }
+
+  ${Timeline} {
+    grid-row: 2;
+    grid-column: 1 / span 2;
+    align-self: normal;
+  }
+
+  ${TitleTextContainer} {
+    grid-row: 1;
+    grid-column: 2;
   }
 
   ${NewPostContainer} {
     grid-row: 2;
     grid-column: 2;
   }
+
+  @media (min-width: 800px) {
+    grid-template-columns: max-content 1fr;
+    grid-template-rows: max-content;
+
+    ${Logo} {
+      width: 80px;
+      height: 80px;
+      align-self: center;
+    }
+
+    ${PageTitle} {
+      display: block;
+      grid-row: 1;
+      grid-column: 2;
+      align-self: center;
+    }
+
+    ${Sidebar} {
+      width: 240px;
+      grid-row: 2;
+      grid-column: 1;
+    }
+
+    ${Timeline} {
+      grid-column: 2;
+    }
+  }
 `;
-
-const Logo = () => {
-  return (
-    <a href="/">
-      <img
-        alt="Alewife"
-        src={alewifeLogo}
-      />
-    </a>
-  );
-};
-
-const TitleText = () => {
-  const {
-    user
-  } = useIdentity();
-  return (
-    <TitleTextContainer>
-      <PageTitle>
-        {user ? user.username : ''}
-      </PageTitle>
-      <div>{window.location.host}</div>
-    </TitleTextContainer>
-  );
-};
-
-const ExploreForm = () => {
-  const {
-    data,
-    error
-  } = useRemoteData<ExploreDTO>('/api/1/my/explore');
-
-  return (
-    <section>
-      {error && (
-        <span>something went wrong, please try again later.</span>
-      )}
-      <h2>Explore</h2>
-      <section>
-        <h3>
-          Topics
-        </h3>
-        <ul>
-          {data?.topics.map((topic) => (
-            <li key={topic}>
-              {`#${topic}`}
-            </li>
-          )) ?? <li>No topics to see right now</li>}
-        </ul>
-      </section>
-      <section>
-        <h3>
-          Users
-        </h3>
-        <ul>
-          {data?.users.map((user) => (
-            <li key={user}>
-              {user}
-            </li>
-          )) ?? <li>No users to see right now</li>}
-        </ul>
-      </section>
-    </section>
-  );
-};
-
-const Sidebar = () => {
-  return (
-    <SidebarContainer>
-      <section>
-        <h2>
-          Connect
-        </h2>
-        <ConnectForm />
-      </section>
-      <section>
-        <h2>
-          Share
-        </h2>
-        <QR
-          size={120}
-          value={window.location.href}
-        />
-      </section>
-      <ExploreForm />
-    </SidebarContainer>
-  );
-};
 
 const App = () => {
   return (
     <AppContainer>
       <Logo />
-      <TitleText />
-      <Sidebar />
-      <NewPostPanel />
+      <PageTitle />
       <Outlet />
+      <Sidebar />
     </AppContainer>
   );
 };
