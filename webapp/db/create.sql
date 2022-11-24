@@ -1,3 +1,12 @@
+CREATE TABLE IF NOT EXISTS meta(
+  schema_version integer NOT NULL
+);
+
+DELETE FROM meta;
+INSERT INTO meta(schema_version) VALUES(1);
+
+/* schema v1 */
+
 CREATE TABLE IF NOT EXISTS people(
   _id serial PRIMARY KEY,
   uuid UUID NOT NULL DEFAULT gen_random_uuid(),
@@ -42,3 +51,11 @@ CREATE TABLE IF NOT EXISTS dms(
   author varchar NOT NULL,
   seen boolean NOT NULL DEFAULT false
 );
+
+CREATE TABLE IF NOT EXISTS post_interactions(
+  host varchar NOT NULL,
+  uuid UUID NOT NULL,
+  shared boolean DEFAULT false,
+  upvoted boolean DEFAULT false
+);
+

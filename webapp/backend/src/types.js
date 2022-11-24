@@ -58,4 +58,10 @@
  * @property {string} created_at
  */
 
+/**
+ * @typedef {Object} SchemaDefinitionDTO
+ * @property {string} sql
+ * @property {number} version
+ */
+
 module.exports = undefined;
