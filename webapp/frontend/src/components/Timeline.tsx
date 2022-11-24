@@ -3,7 +3,7 @@ import {
   useCallback
 } from 'react';
 import {
-    FaCaretUp,
+  FaChevronCircleUp,
   FaShareSquare
 } from 'react-icons/fa';
 import styled from 'styled-components';
@@ -16,6 +16,9 @@ import Button from './Button';
 
 const TimelineItemButton = styled(Button)`
   padding: 4px;
+  display: inline-flex;
+  align-items: center;
+  grid-gap: 4px;
 
   svg {
     transition: transform 0.2s;
@@ -168,17 +171,19 @@ const TimelineItem: ChildComponent<TimelineItemProps> = (props) => {
   return (
     <TimelineItemContainer>
       <Byline {...item} />
-      <div>
-        {text}
-      </div>
+      <div
+        dangerouslySetInnerHTML={{
+          __html: text
+        }}
+      />
       <div>
         {!ownPost && (
           <>
             <TimelineItemButton onClick={onShareItem}>
-              <FaShareSquare />&nbsp;share
+              <FaShareSquare />share
             </TimelineItemButton>
             <TimelineItemButton>
-              <FaCaretUp />&nbsp;upvote
+              <FaChevronCircleUp />upvote
             </TimelineItemButton>
           </>
         )}

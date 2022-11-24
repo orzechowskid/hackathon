@@ -1,6 +1,25 @@
 const fetch = require('node-fetch');
 
+const {
+  marked
+} = require('marked');
+const xss = require('xss');
+
 const types = require('../types');
+
+/**
+ * @param {string} text
+ * @return {string}
+ */
+function markdownToMarkup(text) {
+  return xss(
+    marked.parse(
+      text.replace(
+        /^[\u200B\u200C\u200D\u200E\u200F\uFEFF]/, ''
+      )
+    )
+  );
+}
 
 /**
  * @param {string} host
@@ -112,6 +131,7 @@ async function sendNotification(host, token, message) {
 module.exports = {
   ensureHostWithProtocol,
   ensureHostWithoutProtocol,
+  markdownToMarkup,
   refreshTimeline,
   sendNotification,
   withoutId
