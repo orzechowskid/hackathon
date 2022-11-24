@@ -9,6 +9,7 @@ const types = require('../types');
 const {
   ensureHostWithProtocol,
   ensureHostWithoutProtocol,
+  markdownToMarkup,
   refreshTimeline,
   sendNotification
 } = require('../util');
@@ -161,8 +162,8 @@ router.get('/timeline', async (req, res) => {
   const connections = await db.getConnections();
   const timelines = await refreshTimeline(connections);
   const recentPosts = [
-    ...posts,
-    ...Object.values(timelines).flatMap((x) => x)
+    ...posts.map((post) => ({ ...post, text: markdownToMarkup(post.text) })),
+    ...Object.values(timelines).flatMap((post) => ({ ...post, text: markdownToMarkup(post.text) }))
   ].sort(
     (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
   ).slice(0, 50);

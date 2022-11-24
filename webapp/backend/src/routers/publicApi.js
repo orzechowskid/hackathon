@@ -5,7 +5,8 @@ const db = require('../db');
 const types = require('../types');
 const {
   ensureHostWithProtocol,
-  ensureHostWithoutProtocol
+  ensureHostWithoutProtocol,
+  markdownToMarkup
 } = require('../util');
 
 const router = express.Router();
@@ -233,7 +234,12 @@ router.get('/timeline', async (req, res) => {
       const filterFn = connection?.status === 'follower' || connection?.status === 'mutual'
         ? (post) => post.permissions !== 'private'
         : (post) => post.permissions === 'public';
-      const filteredPosts = posts.filter(filterFn);
+      const filteredPosts = posts
+        .filter(filterFn)
+        .map((post) => ({
+          ...post,
+          text: markdownToMarkup(post.text)
+        }));
 
       res.status(200)
         .json(filteredPosts)

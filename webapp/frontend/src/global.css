@@ -14,7 +14,7 @@ body {
 #root {
     width: 80%;
     max-width: 960px;
-    margin: 0 auto;
+    margin: 4px auto;
     display: flex;
     justify-content: center;
     align-items: stretch;
