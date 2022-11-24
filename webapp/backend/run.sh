@@ -10,4 +10,5 @@ DB_CONNECTION_STRING=postgres://$PGUSER:$PGPASSWORD@localhost:$PGPORT/$PGDATABAS
     NODE_ENV=development \
     NODE_EXTRA_CA_CERTS=../devtools/fake-ca/root-ca/crt.pem \
     PORT=$BACKEND_PORT \
+    PHONEBOOK_HOST=localhost:9000 \
     node ./bin/serve.js

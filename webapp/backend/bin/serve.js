@@ -4,6 +4,7 @@ const express = require('express');
 
 const {
   initialize,
+  updateSchema,
   upsertAuthor
 } = require('../src/db');
 const apiRouter = require('../src/index');
@@ -32,7 +33,8 @@ app.listen(+process.env.PORT, async () => {
     await initialize();
   }
 
-  upsertAuthor();
+  await updateSchema();
+  await upsertAuthor();
   console.log(`${process.env.NODE_NAME} ready on ${process.env.PORT}`);
 });
 process.once('SIGTERM', () => {

@@ -1,6 +1,7 @@
 const {
   Client
 } = require('pg');
+const fetch = require('node-fetch');
 
 const {
   withoutId
@@ -186,6 +187,38 @@ const getTimeline = async () => {
   return result.rows.map(withoutId);
 };
 
+const updateSchema = async () => {
+  try {
+    const q = `
+      SELECT *
+      FROM meta
+      LIMIT 1
+    `;
+    const result = await client.query(q);
+    const currentSchemaVersion = result.rows[0].schema_version;
+    const response = await fetch(`http://${process.env.PHONEBOOK_HOST}/api/1/schema`);
+    /** @type {types.SchemaDefinitionDTO} */
+    const {
+      sql,
+      version: newestSchemaVersion
+    } = await response.json();
+
+    if (currentSchemaVersion !== newestSchemaVersion) {
+      console.log(`updating schema v${currentSchemaVersion} to v${newestSchemaVersion}`);
+
+      try {
+        await client.query(sql);
+      }
+      catch (ex) {
+        console.error(ex?.message ?? ex ?? 'unknown error while updating schema');
+      }
+    }
+  }
+  catch (ex) {
+    console.error(ex?.message ?? ex ?? 'unknown error in updateSchema');
+  }
+};
+
 module.exports = {
   createConnection,
   createNotification,
@@ -197,5 +230,6 @@ module.exports = {
   getTimeline,
   initialize,
   updateConnection,
+  updateSchema,
   upsertAuthor
 };
