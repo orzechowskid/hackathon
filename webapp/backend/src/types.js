@@ -33,6 +33,7 @@
  * @property {string} [original_uuid]
  * @property {PostVisibility} permissions
  * @property {number} score
+ * @property {boolean} shared
  * @property {string} text
  * @property {string} [timeline_host]
  * @property {string} uuid

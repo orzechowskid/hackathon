@@ -7,6 +7,14 @@ source ../devtools/setup-env.sh
 
 sourceEnvFile ../.env.${ALEWIFE_ENV}
 
-docker run -it --network=host -e PGHOST -e PGPORT -e PGUSER -e PGPASSWORD -e PGDATABASE jbergknoff/postgresql-client
+docker run -it \
+  --network=host \
+  -e PGHOST \
+  -e PGPORT \
+  -e PGUSER \
+  -e PGPASSWORD \
+  -e PGDATABASE \
+  postgres:latest \
+  psql
 
 popd &> /dev/null

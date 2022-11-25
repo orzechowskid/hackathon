@@ -25,7 +25,7 @@ const TitleTextContainer = styled.div`
 const NewPostContainer = styled(NewPostPanel)``;
 
 const AppContainer = styled.div`
-  margin: 0;
+  margin-top: 16px;
   flex-grow: 1;
   display: grid;
   grid-gap: 24px;
@@ -79,7 +79,8 @@ const AppContainer = styled.div`
     ${Logo} {
       width: 80px;
       height: 80px;
-      align-self: center;
+      margin-left: 16px;
+      align-self: end;
     }
 
     ${PageTitle} {

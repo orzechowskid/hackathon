@@ -14,7 +14,7 @@ const types = require('../types');
 function markdownToMarkup(text) {
   return xss(
     marked.parse(
-      text.replace(
+      text?.replace(
         /^[\u200B\u200C\u200D\u200E\u200F\uFEFF]/, ''
       )
     )
@@ -78,6 +78,7 @@ function getConnectionPosts(connection) {
 
 /**
  * @param {types.ConnectionDTO[]} connections
+ * @return {Promise<types.TimelineDTO[][]>}
  */
 async function refreshTimeline(connections) {
   const results = await Promise.allSettled(connections.map(getConnectionPosts));

@@ -161,9 +161,18 @@ router.get('/timeline', async (req, res) => {
   });
   const connections = await db.getConnections();
   const timelines = await refreshTimeline(connections);
+  const otherPosts = timelines.flatMap((x) => x);
+  const otherHosts = new Set(
+    otherPosts.map((post) => (post.original_host ?? post.timeline_host))
+  );
+  const shares = await db.getSharesForHosts(Array.from(otherHosts));
   const recentPosts = [
     ...posts.map((post) => ({ ...post, text: markdownToMarkup(post.text) })),
-    ...Object.values(timelines).flatMap((post) => ({ ...post, text: markdownToMarkup(post.text) }))
+    ...otherPosts.map((post) => ({
+      ...post,
+      shared: shares[post.original_host ?? post.timeline_host]?.includes(post.original_uuid ?? post.uuid),
+      text: markdownToMarkup(post.text)
+    }))
   ].sort(
     (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
   ).slice(0, 50);
@@ -233,17 +242,6 @@ router.post('/timeline/share', async (req, res) => {
   }
 
   try {
-    console.log({
-      ...content,
-      author: process.env.USER_NAME,
-      /* original_ fields are empty if this is the first share */
-      original_author: original_author ?? author,
-      original_created_at: original_created_at ?? created_at,
-      original_host: original_host ?? timeline_host,
-      original_uuid: original_uuid ?? uuid,
-      permissions
-    });
-    
     const sharedPost = await db.createPost({
       ...content,
       author: process.env.USER_NAME,
@@ -273,6 +271,32 @@ router.post('/timeline/share', async (req, res) => {
   }
   catch (ex) {
     console.log(ex?.message ?? ex ?? 'unknown error at /timeline/share');
+
+    res.status(500)
+      .end();
+  }
+});
+
+router.delete('/timeline/share', async (req, res) => {
+  const {
+    host,
+    uuid
+  } = req.body;
+
+  if (!host || !uuid) {
+    res.status(400)
+      .end();
+
+    return;
+  }
+
+  try {
+    res.status(200)
+      .json({ ok: false })
+      .end();
+  }
+  catch (ex) {
+    console.log(ex?.message ?? ex ?? 'unknown error deleting /timeline/share');
 
     res.status(500)
       .end();

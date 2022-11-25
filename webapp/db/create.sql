@@ -8,13 +8,13 @@ INSERT INTO meta(schema_version) VALUES(1);
 /* schema v1 */
 
 CREATE TABLE IF NOT EXISTS people(
-  _id serial PRIMARY KEY,
+  _id integer PRIMARY KEY generated always AS identity,
   uuid UUID NOT NULL DEFAULT gen_random_uuid(),
   name varchar NOT NULL UNIQUE
 );
 
 CREATE TABLE IF NOT EXISTS posts(
-  _id serial PRIMARY KEY,
+  _id integer PRIMARY KEY generated always AS identity,
   uuid UUID NOT NULL DEFAULT gen_random_uuid(),
   author varchar REFERENCES people(name),
   text varchar NOT NULL,
@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS posts(
 );
 
 CREATE TABLE IF NOT EXISTS connections(
-  _id serial PRIMARY KEY,
+  _id integer PRIMARY KEY generated always AS identity,
   host varchar NOT NULL UNIQUE,
   token varchar NOT NULL,
   created_at timestamptz NOT NULL DEFAULT NOW(),
@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS connections(
 );
 
 CREATE TABLE IF NOT EXISTS notifications(
-  _id serial PRIMARY KEY,
+  _id integer PRIMARY KEY generated always AS identity,
   uuid UUID NOT NULL DEFAULT gen_random_uuid(),
   text varchar NOT NULL,
   created_at timestamptz NOT NULL DEFAULT NOW(),
@@ -44,18 +44,10 @@ CREATE TABLE IF NOT EXISTS notifications(
 );
 
 CREATE TABLE IF NOT EXISTS dms(
-  _id serial PRIMARY KEY,
+  _id integer PRIMARY KEY generated always AS identity,
   uuid UUID NOT NULL DEFAULT gen_random_uuid(),
   text varchar NOT NULL,
   host varchar NOT NULL,
   author varchar NOT NULL,
   seen boolean NOT NULL DEFAULT false
 );
-
-CREATE TABLE IF NOT EXISTS post_interactions(
-  host varchar NOT NULL,
-  uuid UUID NOT NULL,
-  shared boolean DEFAULT false,
-  upvoted boolean DEFAULT false
-);
-
