@@ -12,7 +12,7 @@ const types = require('../types');
 /** @type {Client} */
 let client;
 
-async function initialize() {
+const initialize = async () => {
   client = new Client({
     connectionString: process.env.DB_CONNECTION_STRING
   });
@@ -219,6 +219,30 @@ const updateSchema = async () => {
   }
 };
 
+/**
+ * @param {string[]} hosts
+ * @return {Promise<Record<string, string[]>>}
+ */
+const getSharesForHosts = async (hosts) => {
+  const q = `
+    SELECT *
+    FROM posts
+    WHERE original_host = ANY($1)
+  `;
+  const params = [
+    hosts
+  ];
+  const result = await client.query(q, params);
+
+  return result.rows.reduce(
+    (acc, el) => ({
+      ...acc,
+      [el.original_host]: [ ...(acc[el.original_host] ?? []), el.original_uuid ]
+    }),
+    {}
+  );
+};
+
 module.exports = {
   createConnection,
   createNotification,
@@ -227,6 +251,7 @@ module.exports = {
   getConnections,
   getNotifications,
   getPosts,
+  getSharesForHosts,
   getTimeline,
   initialize,
   updateConnection,

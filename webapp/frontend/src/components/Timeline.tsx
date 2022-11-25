@@ -32,6 +32,10 @@ const TimelineItemButton = styled(Button)`
   &:not([disabled]):hover svg {
     transform: scale(1.2);
   }
+
+  &[aria-pressed="true"] svg {
+    color: var(--color-green-500);
+  }
 `;
 
 const BylineContainer = styled.div`
@@ -53,12 +57,31 @@ const BylineContainer = styled.div`
 `;
 
 const TimelineItemContainer = styled.div`
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-rows: max-content;
+  grid-template-columns: 44px 44px 1fr;
   grid-gap: 12px;
 
-  ${TimelineItemButton} + ${TimelineItemButton} {
-    margin-left: 20px;
+  div:first-child {
+    grid-row: 2;
+    grid-column: 1 / 4;
+  }
+
+  ${BylineContainer} {
+    grid-row: 1;
+    grid-column: 1 / 4;
+  }
+
+  ${TimelineItemButton} span {
+    display: none;
+  }
+
+  @media (min-width: 480px) {
+    grid-template-columns: 100px 100px 1fr;
+
+    ${TimelineItemButton} span {
+      display: initial;
+    }
   }
 `;
 
@@ -170,24 +193,31 @@ const TimelineItem: ChildComponent<TimelineItemProps> = (props) => {
 
   return (
     <TimelineItemContainer>
-      <Byline {...item} />
       <div
         dangerouslySetInnerHTML={{
           __html: text
         }}
       />
-      <div>
-        {!ownPost && (
-          <>
-            <TimelineItemButton onClick={onShareItem}>
-              <FaShareSquare />share
-            </TimelineItemButton>
-            <TimelineItemButton>
-              <FaChevronCircleUp />upvote
-            </TimelineItemButton>
-          </>
-        )}
-      </div>
+      <Byline {...item} />
+      {!ownPost && (
+        <>
+          <TimelineItemButton
+            aria-pressed={item.shared}
+            onClick={onShareItem}
+          >
+            <FaShareSquare />
+            <span>
+              share
+            </span>
+          </TimelineItemButton>
+          <TimelineItemButton>
+            <FaChevronCircleUp />
+            <span>
+              upvote
+            </span>
+          </TimelineItemButton>
+        </>
+      )}
     </TimelineItemContainer>
   );
 };

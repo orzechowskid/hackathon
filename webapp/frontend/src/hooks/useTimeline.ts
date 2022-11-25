@@ -17,6 +17,7 @@ export interface TimelineDTO {
   original_uuid?: string;
   permissions: 'public' | 'protected' | 'private';
   score: number;
+  shared: boolean;
   text: string;
   timeline_host?: string;
   uuid: string;

@@ -1,6 +1,9 @@
 services:
   db:
     build:
+      args:
+        - GID=${GROUP_ID}
+        - UID=${USER_ID}
       context: ../db
     environment:
       - POSTGRES_USER=${PGUSER}
@@ -9,6 +12,7 @@ services:
     image: alewife-pg
     ports:
       - ${PGPORT}:5432
+    user: ${USER_ID}:${GROUP_ID}
     volumes:
       - "../db/create.sql:/docker-entrypoint-initdb.d/10-create_tables.sql"
       - "../devtools/db-storage/${ALEWIFE_ENV}:/var/lib/postgresql/data"

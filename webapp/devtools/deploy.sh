@@ -17,7 +17,7 @@ echo "setting environment variables..."
 sourceEnvFile ../.env.$ALEWIFE_ENV
 
 echo "ensuring database directory exists..."
-mkdir -p ../db/storage/${ALEWIFE_ENV}
+mkdir -p ./db-storage/$ALEWIFE_ENV
 
 echo "creating SSL certificates..."
 ./fake-ca/create-certificates.sh
