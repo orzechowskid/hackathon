@@ -81,7 +81,11 @@ function getConnectionPosts(connection) {
  * @return {Promise<types.TimelineDTO[][]>}
  */
 async function refreshTimeline(connections) {
-  const results = await Promise.allSettled(connections.map(getConnectionPosts));
+  const results = await Promise.allSettled(
+    connections
+      .filter((conn) => conn.status !== `blocked`)
+      .map(getConnectionPosts)
+  );
 
   return results.map((obj) => obj.value ?? []);
 }

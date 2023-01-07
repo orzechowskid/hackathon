@@ -1,3 +1,7 @@
+import {
+  defaultTheme,
+  Provider as SpectrumProvider
+} from '@adobe/react-spectrum';
 import React, {
   type ParentComponent
 } from 'react';
@@ -23,25 +27,25 @@ import './theme.css';
 
 const AppProvider: ParentComponent = ({ children }) => {
   return (
-    <BrowserRouter>
-      <IdentityProvider>
-        {children}
-      </IdentityProvider>
-    </BrowserRouter>
+    <SpectrumProvider theme={defaultTheme}>
+      <BrowserRouter>
+        <IdentityProvider>
+          {children}
+        </IdentityProvider>
+      </BrowserRouter>
+    </SpectrumProvider>
   );
 };
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
-  <React.StrictMode>
-    <AppProvider>
-      <Routes>
-        <Route element={<Login />} path="/login" />
-        <Route element={<PublicHome />} path="/public" />
-        <Route element={<Index />} path="/">
-          <Route element={<Profile />} path="/profile/:id" />
-          <Route element={<Timeline />} index />
-        </Route>
-      </Routes>
-    </AppProvider>
-  </React.StrictMode>
+  <AppProvider>
+    <Routes>
+      <Route element={<Login />} path="/login" />
+      <Route element={<PublicHome />} path="/public" />
+      <Route element={<Index />} path="/">
+        <Route element={<Profile />} path="/profile/:id" />
+        <Route element={<Timeline />} index />
+      </Route>
+    </Routes>
+  </AppProvider>
 );

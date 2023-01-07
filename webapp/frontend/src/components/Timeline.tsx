@@ -1,113 +1,110 @@
 import {
+  ActionMenu,
+  Button,
+  ButtonGroup,
+  Item
+} from "@adobe/react-spectrum";
+import {
   type ChildComponent,
-  useCallback
-} from 'react';
+  type HTMLAttributes,
+  useCallback,
+  Key,
+} from "react";
+import { FaCheckSquare, FaChevronCircleUp, FaShareSquare } from "react-icons/fa";
+import styled from "styled-components";
+
+import { useConnect } from "../hooks/useConnect";
+import { type TimelineDTO, useTimeline } from "../hooks/useTimeline";
 import {
-  FaChevronCircleUp,
-  FaShareSquare
-} from 'react-icons/fa';
-import styled from 'styled-components';
+  Heading,
+  Section
+} from './Heading';
 
-import {
-  type TimelineDTO,
-  useTimeline
-} from '../hooks/useTimeline';
-import Button from './Button';
+interface QuickHostActionsMenuProps extends HTMLAttributes<HTMLButtonElement> {
+  host: string;
+  id: string;
+}
 
-const TimelineItemButton = styled(Button)`
-  padding: 4px;
-  display: inline-flex;
-  align-items: center;
-  grid-gap: 4px;
+const TimelineItemControls = styled.div`
+    button {
+        display: flex;
+        align-items: center;
 
-  svg {
-    transition: transform 0.2s;
-    transform: none;
-  }
+        svg {
+            margin-right: 4px;
+        }
 
-  > * {
-    vertical-align: middle;
-  }
+        &[aria-pressed="true"] {
+            color: green;
+        }
+    }
+`;
 
-  &:not([disabled]):hover svg {
-    transform: scale(1.2);
-  }
+const TimelineItem = styled.li`
+    p + p {
+        margin-top: 12px;
+    }
 
-  &[aria-pressed="true"] svg {
-    color: var(--color-green-500);
-  }
+    ${TimelineItemControls} {
+        margin-top: 20px;
+    }
+`;
+
+const TimelineList = styled.ol`
+    ${TimelineItem} + ${TimelineItem} {
+        margin-top: 36px;
+    }
 `;
 
 const BylineContainer = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  font-size: 14px;
-  color: var(--gray-700);
-  font-style: italic;
-
-  div:first-of-type {
-    margin-right: 8px;
-  }
-
-  svg {
-    vertical-align: middle;
-    color: var(--color-gray-300);
-  }
+    display: flex;
+    align-items: center;
 `;
 
-const TimelineItemContainer = styled.div`
-  display: grid;
-  grid-template-rows: max-content;
-  grid-template-columns: 44px 44px 1fr;
-  grid-gap: 12px;
+const QuickHostActionsMenu: ChildComponent<QuickHostActionsMenuProps> = (
+  props
+) => {
+  const { host, id } = props;
+  const { busy: isConnecting, execute: doConnect } = useConnect();
+  const onAction = useCallback(
+    async (key: Key) => {
+      switch (key) {
+        case `connect`: {
+          console.log(`connect`);
+          // await doConnect({
+          //   host,
+          // });
+          return;
+        }
+        case `block`: {
+          console.log(`block`);
+          return;
+        }
+        default:
+      }
+    },
+    [ doConnect, host ]
+  );
 
-  div:first-child {
-    grid-row: 2;
-    grid-column: 1 / 4;
-  }
-
-  ${BylineContainer} {
-    grid-row: 1;
-    grid-column: 1 / 4;
-  }
-
-  ${TimelineItemButton} span {
-    display: none;
-  }
-
-  @media (min-width: 480px) {
-    grid-template-columns: 100px 100px 1fr;
-
-    ${TimelineItemButton} span {
-      display: initial;
-    }
-  }
-`;
-
-const TimelineContainer = styled.div`
-  overflow-y: auto;
-
-  ${TimelineItemContainer} + ${TimelineItemContainer} {
-    margin-top: 48px;
-  }
-`;
+  return (
+    <ActionMenu disabledKeys={[`title`]} id={id} isQuiet onAction={onAction}>
+      <Item key="title">{host}</Item>
+      <Item key="connect">Connect</Item>
+      <Item key="block">Block</Item>
+    </ActionMenu>
+  );
+};
 
 const Byline: ChildComponent<Partial<TimelineDTO>> = (props) => {
-  const {
-    author,
-    original_host,
-    timeline_host
-  } = props;
-  const authorName = (!author || author === '')
-    ? 'unknown'
-    : author;
+  const { author, original_host, timeline_host, uuid } = props;
+  const authorName = !author || author === `` ? `unknown` : author;
+  const postId = `${author}-${uuid}`;
 
   if (original_host && timeline_host) {
     return (
-      <BylineContainer>
+      <>
         <div>
-          {authorName}&nbsp;@&nbsp;
+          {authorName}@
           <a
             href={`https://${timeline_host}`}
             referrerPolicy="no-referrer"
@@ -115,6 +112,7 @@ const Byline: ChildComponent<Partial<TimelineDTO>> = (props) => {
           >
             {timeline_host}
           </a>
+          <QuickHostActionsMenu host={timeline_host} id={postId} />
         </div>
         <div>
           <FaShareSquare />
@@ -125,128 +123,133 @@ const Byline: ChildComponent<Partial<TimelineDTO>> = (props) => {
           >
             {original_host}
           </a>
+          <QuickHostActionsMenu host={original_host} id={postId} />
         </div>
-      </BylineContainer>
+      </>
     );
   }
 
   if (original_host && !timeline_host) {
     return (
-      <BylineContainer>
+      <>
         <FaShareSquare />
-        &nbsp;<a
-          href={`https://${original_host}`}
-          referrerPolicy="no-referrer"
-          target="_blank"
+            &nbsp;
+        <a
+            href={`https://${original_host}`}
+            referrerPolicy="no-referrer"
+            target="_blank"
         >
           {original_host}
         </a>
-      </BylineContainer>
+        <QuickHostActionsMenu
+            host={original_host}
+            id={postId}
+        />
+      </>
     );
   }
 
   if (timeline_host && !original_host) {
     return (
-      <BylineContainer>
-        <span>
-          {authorName}&nbsp;@&nbsp;
-        </span>
-        <a
-          href={`https://${timeline_host}`}
-          referrerPolicy="no-referrer"
-          target="_blank"
-        >
-          {timeline_host}
-        </a>
-      </BylineContainer>
+        <>
+          <span>{authorName}&nbsp;@&nbsp;</span>
+          <a
+            href={`https://${timeline_host}`}
+            referrerPolicy="no-referrer"
+            target="_blank"
+          >
+            {timeline_host}
+          </a>
+          <QuickHostActionsMenu
+            host={timeline_host}
+            id={postId}
+          />
+        </>
     );
   }
 
   return (
-    <BylineContainer>
-      <span>
-        me
-      </span>
-    </BylineContainer>
+    <span>me</span>
   );
 };
 
 interface TimelineItemProps {
   item: TimelineDTO;
   onShare: (item: TimelineDTO) => void;
-};
+}
 
-const TimelineItem: ChildComponent<TimelineItemProps> = (props) => {
-  const {
-    item,
-    onShare
-  } = props;
-  const {
-    original_host,
-    text,
-    timeline_host
-  } = item;
+const TimelineEntry: ChildComponent<TimelineItemProps> = (props) => {
+  const { item, onShare } = props;
+  const { original_host, text, timeline_host } = item;
   const onShareItem = useCallback(() => {
     onShare?.(item);
-  }, []);
+  }, [ item, onShare ]);
   const ownPost = !original_host && !timeline_host;
 
   return (
-    <TimelineItemContainer>
+    <TimelineItem>
+      <BylineContainer>
+        <Byline {...item} />
+      </BylineContainer>
       <div
         dangerouslySetInnerHTML={{
-          __html: text
+          __html: text,
         }}
       />
-      <Byline {...item} />
       {!ownPost && (
-        <>
-          <TimelineItemButton
-            aria-pressed={item.shared}
-            onClick={onShareItem}
-          >
-            <FaShareSquare />
-            <span>
-              share
-            </span>
-          </TimelineItemButton>
-          <TimelineItemButton>
-            <FaChevronCircleUp />
-            <span>
-              upvote
-            </span>
-          </TimelineItemButton>
-        </>
+        <TimelineItemControls>
+          <ButtonGroup orientation="horizontal">
+            <Button
+              aria-pressed={item.shared}
+              onPressEnd={onShareItem}
+              variant="secondary"
+            >
+              {item.shared ? <FaCheckSquare /> : <FaShareSquare />}
+              <span>share</span>
+            </Button>
+            <Button variant="secondary">
+              <FaChevronCircleUp />
+              <span>upvote</span>
+            </Button>
+          </ButtonGroup>
+        </TimelineItemControls>
       )}
-    </TimelineItemContainer>
+    </TimelineItem>
   );
 };
 
 const Timeline: ChildComponent = (props) => {
-  const {
-    create,
-    data: timelineEntries,
-    share
-  } = useTimeline();
-  const onShare = useCallback(async (item: TimelineDTO) => {
-    try {
-      await share(item);
-    }
-    catch (ex: any) {
-      alert(ex.message);
-    }
-  }, [ create ]);
+  const { create, data: timelineEntries, share } = useTimeline();
+  const onShare = useCallback(
+    async (item: TimelineDTO) => {
+      try {
+        await share(item);
+      } catch (ex: any) {
+        alert(ex.message);
+      }
+    },
+    [share]
+  );
 
   return (
-    <TimelineContainer {...props}>
-      {timelineEntries?.map((item) => (
-        <TimelineItem
-          key={item.uuid ?? ''}
-          item={item}
-          onShare={onShare}
-        />
-      ))}
-    </TimelineContainer>
+    <Section>
+      <Heading>
+        Latest posts
+      </Heading>
+
+      <TimelineList
+        {...props}
+        role="feed"
+      >
+        {timelineEntries?.map((item) => (
+          <TimelineEntry
+            key={item.uuid ?? ``}
+            item={item}
+            onShare={onShare}
+          />
+        ))}
+      </TimelineList>
+    </Section>
   );
 };
 

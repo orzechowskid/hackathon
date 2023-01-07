@@ -8,6 +8,8 @@ body {
     justify-content: center;
     align-items: stretch;
     flex-grow: 1;
+    color: var(--color-gray-200);
+    letter-spacing: 0.2px;
     background-color: var(--color-gray-800);
 }
 
@@ -18,4 +20,14 @@ body {
     display: flex;
     justify-content: center;
     align-items: stretch;
+}
+
+p {
+    line-height: 1.6;
+}
+
+#dialog {
+    position: absolute;
+    top: 0;
+    left: 0;
 }

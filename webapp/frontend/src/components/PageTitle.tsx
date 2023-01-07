@@ -4,7 +4,9 @@ import {
 import styled from 'styled-components';
 import { useIdentity } from '../hooks/useIdentity';
 
-import Heading from './Heading';
+import {
+  Heading
+} from './Heading';
 
 const PageTitleContainer = styled.div`
   div {
