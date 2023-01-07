@@ -25,13 +25,11 @@ const TitleTextContainer = styled.div`
 const NewPostContainer = styled(NewPostPanel)``;
 
 const AppContainer = styled.div`
-  margin-top: 16px;
-  flex-grow: 1;
+  height: 100vh;
   display: grid;
   grid-gap: 24px;
   grid-template-columns: 24px 1fr;
   grid-template-rows: max-content 1fr 96px;
-  align-items: baseline;
 
   ${Logo} {
     grid-row: 1;
@@ -107,7 +105,9 @@ const App = () => {
     <AppContainer>
       <Logo />
       <PageTitle />
-      <Outlet />
+      <main>
+        <Outlet />
+      </main>
       <Sidebar />
     </AppContainer>
   );

@@ -103,28 +103,24 @@ const Byline: ChildComponent<Partial<TimelineDTO>> = (props) => {
   if (original_host && timeline_host) {
     return (
       <>
-        <div>
-          {authorName}@
-          <a
-            href={`https://${timeline_host}`}
-            referrerPolicy="no-referrer"
-            target="_blank"
-          >
-            {timeline_host}
-          </a>
-          <QuickHostActionsMenu host={timeline_host} id={postId} />
-        </div>
-        <div>
-          <FaShareSquare />
-          <a
-            href={`https://${original_host}`}
-            referrerPolicy="no-referrer"
-            target="_blank"
-          >
-            {original_host}
-          </a>
-          <QuickHostActionsMenu host={original_host} id={postId} />
-        </div>
+        {authorName}@
+        <a
+          href={`https://${timeline_host}`}
+          referrerPolicy="no-referrer"
+          target="_blank"
+        >
+          {timeline_host}
+        </a>
+        <QuickHostActionsMenu host={timeline_host} id={postId} />
+        <FaShareSquare />
+        <a
+          href={`https://${original_host}`}
+          referrerPolicy="no-referrer"
+          target="_blank"
+        >
+          {original_host}
+        </a>
+        <QuickHostActionsMenu host={original_host} id={postId} />
       </>
     );
   }
