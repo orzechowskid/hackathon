@@ -17,7 +17,7 @@
     --color-green-700: #c0f0c0;
     --color-green-800: #f0fff0;
 
-    --color-body-text: var(--color-gray-100);
+    --color-body-text: var(--color-gray-200);
     --color-button-disabled: var(--color-gray-400);
 
     --font-size-page-title: 30px;

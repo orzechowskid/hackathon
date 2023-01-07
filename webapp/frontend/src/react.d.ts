@@ -1,7 +1,8 @@
 import 'react';
 
 declare module 'react' {
-  export type ButtonClickEvent = React.MouseEvent<HTMLButtonElement>;
+  export type ClickEvent<T extends HTMLElement> = React.MouseEvent<T>;
+  export type ButtonClickEvent = ClickEvent<HTMLButtonElement>;
   export interface HTMLFormElementTyped<T extends object> extends HTMLFormElement {
     elements: HTMLFormControlsCollection & T;
   };
@@ -11,7 +12,7 @@ declare module 'react' {
   export interface StyledComponentProps {
     className?: string;
   };
-  export type ParentComponent<T = {}> = React.FunctionComponent<React.PropsWithChildren<T & StyledComponentProps>>;
+  export type ParentComponent<T = {}> = React.FunctionComponent<React.PropsWithChildren<StyledComponentProps & T>>;
   export type ChildComponent<T = {}> = React.FunctionComponent<StyledComponentProps & T>;
   export type PageComponent = React.FunctionComponent<{}>;
 }

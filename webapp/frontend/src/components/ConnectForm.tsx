@@ -6,21 +6,13 @@ import {
 import styled from 'styled-components';
 
 import {
-  useRemoteAction
-} from '../hooks/useRemoteData';
+  useConnect
+} from '../hooks/useConnect';
 import Button from './Button';
 import Input from './Input';
 
 interface ConnectFormShape {
   name: HTMLInputElement;
-}
-
-interface ConnectRequest {
-  host: string;
-}
-
-interface ConnectResponse {
-  ok: boolean;
 }
 
 const ConnectFormContainer = styled.form`
@@ -35,7 +27,7 @@ const ConnectFormContainer = styled.form`
 const ConnectForm: ChildComponent = (props) => {
   const {
     execute
-  } = useRemoteAction<ConnectResponse, ConnectRequest>('/api/1/my/connect');
+  } = useConnect();
   const onSubmit = useCallback(async (e: FormSubmitEvent<ConnectFormShape>) => {
     e.preventDefault();
     const payload = {
