@@ -99,13 +99,22 @@ const updateConnection = async (connection) => {
  * @return {Promise<types.TimelineDTO[]>}
  */
 const getPosts = async () => {
-  const q = `
-    SELECT *
-    FROM posts
-    ORDER BY created_at DESC
+  try {
+    const q = `
+      SELECT *
+      FROM posts
+      WHERE deleted = false
+      ORDER BY created_at DESC
   `;
-  const result = await client.query(q);
-  return result.rows.map(withoutId);
+    const result = await client.query(q);
+
+    return result.rows.map(withoutId);
+  }
+  catch (ex) {
+    console.log(`db.getPosts:`, ex?.message ?? ex ?? `unknown error`);
+
+    return [];
+  }
 };
 
 /**
@@ -127,6 +136,22 @@ const createPost = async (post) => {
     post.original_host,
     post.original_uuid
   ];
+  const result = await client.query(q, values);
+
+  return result.rows[0];
+};
+
+/**
+ * @param {string} uuid
+ * @return {Promise<types.TimelineDTO>}
+ */
+const softDeletePost = async (uuid) => {
+  const q = `
+    UPDATE posts
+    SET deleted = true
+    WHERE original_uuid = $1
+  `;
+  const values = [ uuid ];
   const result = await client.query(q, values);
 
   return result.rows[0];
@@ -178,7 +203,7 @@ const getTimeline = async () => {
   const q = `
     SELECT *
     FROM posts
-    WHERE original_host IS NULL
+    WHERE original_host IS NULL and deleted = false
     ORDER BY created_at DESC
     LIMIT 1
   `;
@@ -227,7 +252,7 @@ const getSharesForHosts = async (hosts) => {
   const q = `
     SELECT *
     FROM posts
-    WHERE original_host = ANY($1)
+    WHERE original_host = ANY($1) and deleted = false
   `;
   const params = [
     hosts
@@ -254,6 +279,7 @@ module.exports = {
   getSharesForHosts,
   getTimeline,
   initialize,
+  softDeletePost,
   updateConnection,
   updateSchema,
   upsertAuthor
