@@ -37,6 +37,11 @@ const useTimeline = () => {
   const unshareAction = useRemoteAction<TimelineDTO, TimelineDTO>(`/api/1/my/timeline/share`, { verb: `DELETE` });
   const onShare = useCallback(async (post: TimelineDTO) => {
     try {
+      timeline.update(post.uuid, {
+        ...post,
+        shared: !post.shared
+      }, true);
+
       if (post.shared) {
         await unshareAction.execute(post);
       }
@@ -46,7 +51,7 @@ const useTimeline = () => {
     } catch (ex) {
       alert(getMessageFromError(ex));
     }
-  }, [ shareAction, unshareAction ]);
+  }, [ shareAction, unshareAction, timeline.update ]);
 
   return {
     ...timeline,

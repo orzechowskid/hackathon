@@ -22,10 +22,10 @@ const postFetcher = <T extends Collectible>(token: string | null) => (path: Requ
   window.fetch(path, {
     body: JSON.stringify(payload),
     headers: {
-      'Content-Type': 'application/json',
+      'Content-Type': `application/json`,
       ...(token ? { 'X-JWT': token } : {})
     },
-    method: 'POST'
+    method: `POST`
   }).then(() => window.fetch(path, {
     headers: {
       ...(token ? { 'X-JWT': token } : {})
@@ -36,10 +36,10 @@ const putFetcher = <T extends Collectible>(token: string | null) => (path: Reque
   window.fetch(`${path}/${uuid}`, {
     body: JSON.stringify(payload),
     headers: {
-      'Content-Type': 'application/json',
+      'Content-Type': `application/json`,
       ...(token ? { 'X-JWT': token } : {})
     },
-    method: 'PUT'
+    method: `PUT`
   }).then(() => window.fetch(path, {
     headers: {
       ...(token ? { 'X-JWT': token } : {})
@@ -51,7 +51,7 @@ const deleteFetcher = <T extends Collectible>(token: string | null) => (path: Re
     headers: {
       ...(token ? { 'X-JWT': token } : {})
     },
-    method: 'DELETE'
+    method: `DELETE`
   }).then(() => window.fetch(path, {
     headers: {
       ...(token ? { 'X-JWT': token } : {})
@@ -73,15 +73,15 @@ const useRemoteCollection = function <T extends Collectible>(apiEndpoint: string
     mutate
   } = useSWR<T[]>(apiEndpoint, getFetcher<T[]>(token), swrOpts);
   const create = useCallback(async (newObject: Partial<T>) => {
-    await mutate(postFetcher<T>(token)(apiEndpoint, newObject), {
+    await mutate(postFetcher<T>(token)(createEndpoint, newObject), {
       /* warning: footgun */
       optimisticData: [ ...(data ?? []), newObject as T ],
       rollbackOnError: true,
       populateCache: true,
       revalidate: false
     });
-  }, [ createEndpoint, token ]);
-  const update = useCallback(async (uuid: string, payload: T) => {
+  }, [ createEndpoint, data, mutate, token ]);
+  const update = useCallback(async (uuid: string, payload: T, quiet?: boolean) => {
     const idx = data?.findIndex((record) => record.uuid === uuid);
     const optimisticData = idx
       ? [
@@ -90,13 +90,17 @@ const useRemoteCollection = function <T extends Collectible>(apiEndpoint: string
         ...(data?.slice(idx + 1) ?? [])
       ]
       : [];
-    await mutate(putFetcher<T>(token)(apiEndpoint, uuid, payload), {
-      optimisticData,
-      rollbackOnError: true,
-      populateCache: true,
-      revalidate: false
-    });
-  }, [ token ]);
+    if (quiet) {
+      await mutate(optimisticData, {
+        populateCache: false
+      });
+    }
+    else {
+      await mutate(putFetcher<T>(token)(apiEndpoint, uuid, payload), {
+        optimisticData,
+      });
+    }
+  }, [ apiEndpoint, data, mutate, token ]);
   const remove = useCallback(async (uuid: string) => {
     await mutate(deleteFetcher<T>(token)(apiEndpoint, uuid), {
       optimisticData: data?.filter((record) => record.uuid !== uuid),
@@ -104,7 +108,7 @@ const useRemoteCollection = function <T extends Collectible>(apiEndpoint: string
       populateCache: true,
       revalidate: false
     });
-  }, [ token ]);
+  }, [ apiEndpoint, data, mutate, token ]);
 
   return {
     busy: isValidating,
