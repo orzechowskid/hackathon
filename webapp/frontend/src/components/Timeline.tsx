@@ -215,17 +215,10 @@ const TimelineEntry: ChildComponent<TimelineItemProps> = (props) => {
 };
 
 const Timeline: ChildComponent = (props) => {
-  const { create, data: timelineEntries, share } = useTimeline();
-  const onShare = useCallback(
-    async (item: TimelineDTO) => {
-      try {
-        await share(item);
-      } catch (ex: any) {
-        alert(ex.message);
-      }
-    },
-    [share]
-  );
+  const {
+    data: timelineEntries,
+    onShare
+  } = useTimeline();
 
   return (
     <Section>

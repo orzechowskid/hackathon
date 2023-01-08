@@ -1,12 +1,16 @@
 import {
   useCallback
 } from 'react';
+
+import {
+  getMessageFromError
+} from '../utils/error';
 import {
   useRemoteAction
-} from "./useRemoteData";
+} from './useRemoteData';
 import {
   useRemoteCollection
-} from "./useRemoteData/useRemoteCollection";
+} from './useRemoteData/useRemoteCollection';
 
 export interface TimelineDTO {
   author: string;
@@ -15,7 +19,7 @@ export interface TimelineDTO {
   original_created_at?: string;
   original_host?: string;
   original_uuid?: string;
-  permissions: 'public' | 'protected' | 'private';
+  permissions: `public` | `protected` | `private`;
   score: number;
   shared: boolean;
   text: string;
@@ -24,26 +28,30 @@ export interface TimelineDTO {
 }
 
 const useTimeline = () => {
-  const timeline = useRemoteCollection<TimelineDTO>('/api/1/my/timeline', {
+  const timeline = useRemoteCollection<TimelineDTO>(`/api/1/my/timeline`, {
     swrOpts: {
       dedupingInterval: 50000,
       refreshInterval: 30000
     }});
-  const shareAction = useRemoteAction<TimelineDTO, TimelineDTO>('/api/1/my/timeline/share');
-  const share = useCallback(async (post: TimelineDTO) => {
+  const shareAction = useRemoteAction<TimelineDTO, TimelineDTO>(`/api/1/my/timeline/share`);
+  const unshareAction = useRemoteAction<TimelineDTO, TimelineDTO>(`/api/1/my/timeline/share`, { verb: `DELETE` });
+  const onShare = useCallback(async (post: TimelineDTO) => {
     try {
-      await shareAction.execute(post, {});
-      timeline.refresh();
+      if (post.shared) {
+        await unshareAction.execute(post);
+      }
+      else {
+        await shareAction.execute(post);
+      }
+    } catch (ex) {
+      alert(getMessageFromError(ex));
     }
-    catch (ex: any) {
-      console.error(ex?.message ?? ex ?? 'unknown error while sharing post');
-    }
-  }, [ shareAction?.execute, timeline.refresh ]);
+  }, [ shareAction, unshareAction ]);
 
   return {
     ...timeline,
     busy: timeline.busy || shareAction.busy,
-    share
+    onShare
   };
 };
 

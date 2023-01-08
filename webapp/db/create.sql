@@ -24,7 +24,8 @@ CREATE TABLE IF NOT EXISTS posts(
   original_author varchar,
   original_uuid UUID,
   original_created_at timestamptz,
-  score integer NOT NULL DEFAULT 0
+  score integer NOT NULL DEFAULT 0,
+  deleted boolean NOT NULL DEFAULT false
 );
 
 CREATE TABLE IF NOT EXISTS connections(

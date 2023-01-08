@@ -11,6 +11,7 @@
 /**
  * @typedef {'public' | 'protected' | 'private' } PostVisibility
  */
+
 /**
  * @typedef {'follower'|'mutual'|'blocked'|'unconfirmed'} ConnectionStatus
  */
@@ -38,8 +39,6 @@
  * @property {string} [timeline_host]
  * @property {string} uuid
  */
-
-
 
 /**
  * @typedef {Object} AuthorDTO

@@ -1,25 +1,25 @@
-const express = require('express');
-const fetch = require('node-fetch');
+const express = require(`express`);
+const fetch = require(`node-fetch`);
 const {
   v4: uuid
-} = require('uuid');
+} = require(`uuid`);
 
-const db = require('../db');
-const types = require('../types');
+const db = require(`../db`);
+const types = require(`../types`);
 const {
   ensureHostWithProtocol,
   ensureHostWithoutProtocol,
   markdownToMarkup,
   refreshTimeline,
   sendNotification
-} = require('../util');
+} = require(`../util`);
 
 const router = express.Router();
 
 router.use(express.json());
 
 router.use((req, res, next) => {
-  if (!req.headers['x-jwt']) {
+  if (!req.headers[`x-jwt`]) {
     res.status(401)
       .end();
 
@@ -29,7 +29,7 @@ router.use((req, res, next) => {
   next();
 });
 
-router.post('/connect', async (req, res) => {
+router.post(`/connect`, async (req, res) => {
   const {
     host
   } = req.body;
@@ -58,8 +58,8 @@ router.post('/connect', async (req, res) => {
         const handle = setTimeout(reject, 10 * 1000);
         let existingConnection = await db.getConnection(hostWithoutProtocol);
 
-        if (existingConnection && existingConnection.status !== 'unconfirmed') {
-          console.log('existing non-pending connection');
+        if (existingConnection && existingConnection.status !== `unconfirmed`) {
+          console.log(`existing non-pending connection`);
           resolve(undefined);
 
           return;
@@ -67,7 +67,7 @@ router.post('/connect', async (req, res) => {
         else if (!existingConnection) {
           existingConnection = await db.createConnection({
             host: hostWithoutProtocol,
-            status: 'unconfirmed',
+            status: `unconfirmed`,
             token: uuid()
           });
         }
@@ -76,7 +76,7 @@ router.post('/connect', async (req, res) => {
             'X-ID': process.env.NODE_NAME,
             'X-JWT': existingConnection.token
           },
-          method: 'POST'
+          method: `POST`
         });
 
         if (response.status >= 400) {
@@ -88,7 +88,7 @@ router.post('/connect', async (req, res) => {
         const x = await response.json();
         const updatedConnection = await db.updateConnection({
           ...existingConnection,
-          status: 'follower'
+          status: `follower`
         });
 
         clearTimeout(handle);
@@ -116,30 +116,30 @@ router.post('/connect', async (req, res) => {
     }
   }
   catch (ex) {
-    console.log(ex?.message ?? 'unknown exception in /connect');
+    console.log(ex?.message ?? `unknown exception in /connect`);
     res.status(500)
       .end();
   }
 });
 
-router.get('/explore', async (req, res) => {
+router.get(`/explore`, async (req, res) => {
     res.status(200)
     .json({
       topics: [
-        'helloweb'
+        `helloweb`
       ],
       users: []
     })
     .end();
 });
 
-router.get('/info', (req, res) => {
+router.get(`/info`, (req, res) => {
   res.status(200)
-    .json({ username: 'danorz' })
+    .json({ username: `danorz` })
     .end();
 });
 
-router.get('/notifications', async (req, res) => {
+router.get(`/notifications`, async (req, res) => {
   const notifications = await db.getNotifications();
 
   res.status(200)
@@ -147,7 +147,7 @@ router.get('/notifications', async (req, res) => {
     .end();
 });
 
-router.get('/notifications/stats', async (req, res) => {
+router.get(`/notifications/stats`, async (req, res) => {
   const notifications = await db.getNotifications();
 
   res.status(200)
@@ -155,7 +155,7 @@ router.get('/notifications/stats', async (req, res) => {
   .end();
 });
 
-router.get('/timeline', async (req, res) => {
+router.get(`/timeline`, async (req, res) => {
   const posts = await db.getTimeline({
     limit: 1000
   });
@@ -182,7 +182,7 @@ router.get('/timeline', async (req, res) => {
     .end();
 });
 
-router.post('/timeline', async (req, res) => {
+router.post(`/timeline`, async (req, res) => {
   /** @type {Partial<db.TimelineDTO>} */
   const {
     original_host,
@@ -218,7 +218,7 @@ router.post('/timeline', async (req, res) => {
     }
 });
 
-router.post('/timeline/share', async (req, res) => {
+router.post(`/timeline/share`, async (req, res) => {
   /** @type {types.TimelineDTO} */
   const {
     author,
@@ -234,12 +234,14 @@ router.post('/timeline/share', async (req, res) => {
     ...content
   } = req.body;
 
-  if (permissions !== 'public') {
+  if (permissions !== `public`) {
     res.status(409)
       .end();
 
     return;
   }
+
+  // TODO: check to see if we've already shared this post
 
   try {
     const sharedPost = await db.createPost({
@@ -258,10 +260,10 @@ router.post('/timeline/share', async (req, res) => {
       /* non-blocking promise chain */
       db.getConnection(timeline_host)
         .then((connection) => {
-          return sendNotification(timeline_host, connection.token, 'aaa');
+          return sendNotification(timeline_host, connection.token, `aaa`);
         })
         .catch((ex) => {
-          console.log(ex?.message ?? ex ?? 'unknown error in sendNotification at /timeline/share');
+          console.log(`/timeline/share:`, ex?.message ?? ex ?? `unknown error`);
         });
     }
 
@@ -270,20 +272,20 @@ router.post('/timeline/share', async (req, res) => {
       .end();
   }
   catch (ex) {
-    console.log(ex?.message ?? ex ?? 'unknown error at /timeline/share');
+    console.log(`/timeline/share:`, ex?.message ?? ex ?? `unknown error`);
 
     res.status(500)
       .end();
   }
 });
 
-router.delete('/timeline/share', async (req, res) => {
+router.delete(`/timeline/share`, async (req, res) => {
+  /** @type {types.TimelineDTO} */
   const {
-    host,
     uuid
   } = req.body;
 
-  if (!host || !uuid) {
+  if (!uuid) {
     res.status(400)
       .end();
 
@@ -291,12 +293,13 @@ router.delete('/timeline/share', async (req, res) => {
   }
 
   try {
+    const deletedPost = await db.softDeletePost(uuid);
     res.status(200)
-      .json({ ok: false })
+      .json(deletedPost)
       .end();
   }
   catch (ex) {
-    console.log(ex?.message ?? ex ?? 'unknown error deleting /timeline/share');
+    console.log(`/timeline/share`, ex?.message ?? ex ?? `unknown error`);
 
     res.status(500)
       .end();
