@@ -47,7 +47,12 @@ const ConnectForm: ChildComponent = (props) => {
         required
         type="text"
       />
-      <Button type="submit">ok!</Button>
+      <Button
+        type="submit"
+        variant="secondary"
+      >
+        ok!
+      </Button>
     </ConnectFormContainer>
   );
 };

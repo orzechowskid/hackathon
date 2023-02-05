@@ -21,23 +21,30 @@ export interface TimelineDTO {
   original_uuid?: string;
   permissions: `public` | `protected` | `private`;
   score: number;
+  share_count: number;
   shared: boolean;
   text: string;
   timeline_host?: string;
+  upvoted: boolean;
   uuid: string;
 }
 
 const useTimeline = () => {
   const timeline = useRemoteCollection<TimelineDTO>(`/api/1/my/timeline`, {
     swrOpts: {
-      dedupingInterval: 50000,
+      dedupingInterval: 5000,
       refreshInterval: 30000
     }});
   const shareAction = useRemoteAction<TimelineDTO, TimelineDTO>(`/api/1/my/timeline/share`);
   const unshareAction = useRemoteAction<TimelineDTO, TimelineDTO>(`/api/1/my/timeline/share`, { verb: `DELETE` });
+  const upvoteAction = useRemoteAction<TimelineDTO, TimelineDTO>(`/api/1/my/timeline/upvote`);
+  const downvoteAction = useRemoteAction<TimelineDTO, TimelineDTO>(`/api/1/my/timeline/upvote`, { verb: `DELETE` });
+  const {
+    update
+  } = timeline;
   const onShare = useCallback(async (post: TimelineDTO) => {
     try {
-      timeline.update(post.uuid, {
+      update(post.uuid, {
         ...post,
         shared: !post.shared
       }, true);
@@ -51,12 +58,39 @@ const useTimeline = () => {
     } catch (ex) {
       alert(getMessageFromError(ex));
     }
-  }, [ shareAction, unshareAction, timeline.update ]);
+  }, [ shareAction, unshareAction, update ]);
+  const onUpvote = useCallback(async (post: TimelineDTO) => {
+    try {
+      update(post.uuid, {
+        ...post,
+        upvoted: !post.upvoted
+      }, true);
+
+      if (post.upvoted) {
+        await downvoteAction.execute(post);
+      }
+      else {
+        await upvoteAction.execute(post);
+      }
+    }
+    catch (ex) {
+      alert(getMessageFromError(ex));
+    }
+  }, [ upvoteAction, downvoteAction, update ]);
+  const busy = timeline.busy
+    || shareAction.busy
+    || unshareAction.busy
+    || upvoteAction.busy
+    || downvoteAction.busy;
 
   return {
     ...timeline,
-    busy: timeline.busy || shareAction.busy,
-    onShare
+    busy,
+    data: timeline.data?.sort(
+      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    ) ?? [],
+    onShare,
+    onUpvote
   };
 };
 

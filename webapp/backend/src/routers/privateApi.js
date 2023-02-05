@@ -162,16 +162,25 @@ router.get(`/timeline`, async (req, res) => {
   const connections = await db.getConnections();
   const timelines = await refreshTimeline(connections);
   const otherPosts = timelines.flatMap((x) => x);
-  const otherHosts = new Set(
-    otherPosts.map((post) => (post.original_host ?? post.timeline_host))
+  const otherHosts = Array.from(
+    new Set(
+      otherPosts.map((post) => (post.original_host ?? post.timeline_host))
+    )
   );
-  const shares = await db.getSharesForHosts(Array.from(otherHosts));
+  const [
+    shares,
+    upvotes
+  ] = await Promise.all([
+    db.getSharesForHosts(otherHosts),
+    db.getUpvotesForHosts(otherHosts)
+  ]);
   const recentPosts = [
     ...posts.map((post) => ({ ...post, text: markdownToMarkup(post.text) })),
     ...otherPosts.map((post) => ({
       ...post,
       shared: shares[post.original_host ?? post.timeline_host]?.includes(post.original_uuid ?? post.uuid),
-      text: markdownToMarkup(post.text)
+      text: markdownToMarkup(post.text),
+      upvoted: upvotes[post.original_host ?? post.timeline_host]?.includes(post.original_uuid ?? post.uuid)
     }))
   ].sort(
     (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
@@ -255,12 +264,16 @@ router.post(`/timeline/share`, async (req, res) => {
       permissions
     });
 
-    /* inform our connection that we're sharing their post */
+    /* inform our connection that we're sharing their post.  no need to block on
+     * it though so we use a promise chain to catch errors */
     if (!original_host) {
-      /* non-blocking promise chain */
       db.getConnection(timeline_host)
         .then((connection) => {
-          return sendNotification(timeline_host, connection.token, `aaa`);
+          return sendNotification({
+            host: timeline_host,
+            messageType: types.NOTIFY_TYPES.Share,
+            token: connection.token
+          });
         })
         .catch((ex) => {
           console.log(`/timeline/share:`, ex?.message ?? ex ?? `unknown error`);
@@ -299,7 +312,87 @@ router.delete(`/timeline/share`, async (req, res) => {
       .end();
   }
   catch (ex) {
-    console.log(`/timeline/share`, ex?.message ?? ex ?? `unknown error`);
+    console.log(`/timeline/share:`, ex?.message ?? ex ?? `unknown error`);
+
+    res.status(500)
+      .end();
+  }
+});
+
+router.post(`/timeline/upvote`, async (req, res) => {
+  /** @type {types.TimelineDTO} */
+  const {
+    timeline_host,
+    original_host,
+    original_uuid,
+    uuid
+  } = req.body;
+
+  if (!uuid) {
+    res.status(400)
+      .end();
+
+    return;
+  }
+
+  const existingConnection = await db.getConnection(original_host ?? timeline_host);
+
+  if (!existingConnection) {
+    res.status(400)
+      .end();
+
+    return;
+  }
+
+  try {
+    await Promise.all([
+      sendNotification({
+        host: original_host ?? timeline_host,
+        messageBody: {
+          uuid: original_uuid ?? uuid
+        },
+        messageType: types.NOTIFY_TYPES.Upvote,
+        token: existingConnection.token
+      }),
+      db.createVote({
+        host: original_host ?? timeline_host,
+        upvoted: true,
+        uuid: original_uuid ?? uuid
+      })
+    ]);
+
+    res.status(200)
+      .end();
+    }
+  catch (ex) {
+    console.log(`/timeline/upvote:`, ex?.message ?? ex ?? `unknown error`);
+
+    res.status(500)
+      .end();
+  }
+});
+
+router.delete(`/timeline/upvote`, async (req, res) => {
+  /** @type {types.TimelineDTO} */
+  const {
+    original_host,
+    original_uuid,
+    timeline_host,
+    uuid
+  } = req.body;
+
+  try {
+    await db.createVote({
+      host: original_host ?? timeline_host,
+      upvoted: false,
+      uuid: original_uuid ?? uuid
+    });
+
+    res.status(200)
+      .end();
+    }
+  catch (ex) {
+    console.log(`/timeline/upvote:`, ex?.message ?? ex ?? `unknown error`);
 
     res.status(500)
       .end();

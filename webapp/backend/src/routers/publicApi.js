@@ -1,28 +1,33 @@
-const express = require('express');
-const fetch = require('node-fetch');
+const express = require(`express`);
+const fetch = require(`node-fetch`);
 
-const db = require('../db');
-const types = require('../types');
+const db = require(`../db`);
+const types = require(`../types`);
 const {
   ensureHostWithProtocol,
   ensureHostWithoutProtocol,
-  markdownToMarkup
-} = require('../util');
+  markdownToMarkup,
+  omit
+} = require(`../util`);
+const {
+  doSavePostShare,
+  doSavePostUpvote
+} = require('./apiUtils');
 
 const router = express.Router();
 
 router.use((_req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
+  res.header(`Access-Control-Allow-Origin`, `*`);
   next();
 });
-router.options('*', (_req, res) => {
+router.options(`*`, (_req, res) => {
   res.status(200)
-    .header('Access-Control-Allow-Headers', '*')
+    .header(`Access-Control-Allow-Headers`, `*`)
     .end();
 });
 router.use(express.json());
 
-router.post('/connectrequest', async (req, res) => {
+router.post(`/connectrequest`, async (req, res) => {
   const {
     'x-id': remoteHost,
     'x-jwt': token
@@ -36,7 +41,7 @@ router.post('/connectrequest', async (req, res) => {
   let hostWithoutProtocol = ensureHostWithoutProtocol(remoteHost);
   let connection = await db.getConnection(hostWithoutProtocol);
 
-  if (connection && connection.status !== 'unconfirmed') {
+  if (connection && connection.status !== `unconfirmed`) {
     console.log(`${hostWithoutProtocol} is already a connection`);
     res.status(409)
       .end();
@@ -46,7 +51,7 @@ router.post('/connectrequest', async (req, res) => {
       if (!connection) {
         connection = await db.createConnection({
           host: hostWithoutProtocol,
-          status: 'unconfirmed',
+          status: `unconfirmed`,
           token
         });
       }
@@ -61,13 +66,13 @@ router.post('/connectrequest', async (req, res) => {
               'X-ID': process.env.NODE_NAME,
               'X-JWT': token
             },
-            method: 'POST'
+            method: `POST`
           });
           const payload = await response.json();
 
           await db.updateConnection({
             ...connection,
-            status: 'follower'
+            status: `follower`
           });
           clearTimeout(handle);
           resolve();
@@ -86,14 +91,14 @@ router.post('/connectrequest', async (req, res) => {
         .end();
     }
     catch (ex) {
-      console.log(ex?.message ?? 'unknown exception in /connectrequest');
+      console.log(`/connectrequest:`, ex?.message ?? ex ?? `unknown error`);
       res.status(500)
         .end();
     }
   }
 });
 
-router.post('/connectconfirm', async (req, res) => {
+router.post(`/connectconfirm`, async (req, res) => {
   const {
     'x-id': remoteHost,
     'x-jwt': token
@@ -120,7 +125,7 @@ router.post('/connectconfirm', async (req, res) => {
     else {
       await db.updateConnection({
         ...connection,
-        status: 'following'
+        status: `following`
       });
 
       res.status(200)
@@ -129,13 +134,13 @@ router.post('/connectconfirm', async (req, res) => {
     }
   }
   catch (ex) {
-    console.log(ex?.message ?? 'unknown exception in /connectconfirm');
+    console.log(ex?.message ?? `unknown exception in /connectconfirm`);
     res.status(500)
       .end();
   }
 });
 
-router.post('/dms', async (req, res) => {
+router.post(`/dms`, async (req, res) => {
   const {
     'x-id': remoteHost,
     'x-jwt': token
@@ -156,7 +161,7 @@ router.post('/dms', async (req, res) => {
 
     return;
   }
-  else if (connection?.status === 'blocked') {
+  else if (connection?.status === `blocked`) {
     res.status(200)
       .end();
 
@@ -169,13 +174,13 @@ router.post('/dms', async (req, res) => {
     .json({ ok: true });
 });
 
-router.post('/notifications', async (req, res) => {
+router.post(`/notifications`, async (req, res) => {
   const {
     'x-id': remoteHost,
     'x-jwt': token
   } = req.headers;
 
-  if (!remoteHost || !token) {
+  if (!remoteHost) {
     res.status(400)
       .end();
 
@@ -190,8 +195,9 @@ router.post('/notifications', async (req, res) => {
 
     return;
   }
-  else if (connection?.status === 'blocked' || connection?.status === 'unconfirmed') {
+  else if (connection?.status === `blocked` || connection?.status === `unconfirmed`) {
     res.status(200)
+      .json({})
       .end();
 
     return;
@@ -199,13 +205,27 @@ router.post('/notifications', async (req, res) => {
 
   /** @type {types.ExternalNotificationDTO} */
   const {
-    text
+    type,
+    ...payload
   } = req.body;
 
-  await db.createNotification(text);
+  switch (type) {
+    case types.NOTIFY_TYPES.Upvote: {
+      await doSavePostUpvote(payload);
+
+      break;
+    }
+    case types.NOTIFY_TYPES.Share: {
+      await doSavePostShare(payload);
+    }
+  }
+
+  res.status(200)
+    .json({ ok: true })
+    .end();
 });
 
-router.get('/profile', async (req, res) => {
+router.get(`/profile`, async (req, res) => {
   res.status(200)
     .json({
       username: process.env.USER_NAME
@@ -213,7 +233,7 @@ router.get('/profile', async (req, res) => {
     .end();
 });
 
-router.get('/timeline', async (req, res) => {
+router.get(`/timeline`, async (req, res) => {
   const {
     'x-id': remoteHost,
     'x-jwt': token
@@ -224,20 +244,21 @@ router.get('/timeline', async (req, res) => {
       ? await db.getConnection(remoteHost)
       : undefined;
 
-    if (connection?.status === 'blocked') {
+    if (connection?.status === `blocked`) {
       res.status(200)
         .json([])
         .end();
     }
     else {
       const posts = await db.getPosts({ limit: 1000 });
-      const filterFn = connection?.status === 'follower' || connection?.status === 'mutual'
-        ? (post) => post.permissions !== 'private'
-        : (post) => post.permissions === 'public';
+      const filterFn =
+        connection?.status === `follower` || connection?.status === `mutual`
+          ? (post) => post.permissions !== `private`
+          : (post) => post.permissions === `public`;
       const filteredPosts = posts
         .filter(filterFn)
         .map((post) => ({
-          ...post,
+          ...omit(post, [ `score`, `share_count` ]),
           text: markdownToMarkup(post.text)
         }));
 

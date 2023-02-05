@@ -1,4 +1,11 @@
 import {
+  ButtonGroup
+} from '@adobe/react-spectrum';
+import {
+  type ChildComponent,
+  useCallback
+} from 'react';
+import {
   Outlet
 } from 'react-router';
 import styled from 'styled-components';
@@ -22,7 +29,13 @@ const TitleTextContainer = styled.div`
   }
 `;
 
-const NewPostContainer = styled(NewPostPanel)``;
+const ControlsContainer: ChildComponent = () => {
+  return (
+    <ButtonGroup orientation="horizontal">
+      <NewPostPanel />
+    </ButtonGroup>
+  );
+};
 
 const AppContainer = styled.div`
   height: 100vh;
@@ -65,14 +78,9 @@ const AppContainer = styled.div`
     grid-column: 2;
   }
 
-  ${NewPostContainer} {
-    grid-row: 2;
-    grid-column: 2;
-  }
-
   @media (min-width: 800px) {
     grid-template-columns: max-content 1fr;
-    grid-template-rows: max-content;
+    grid-template-rows: min-content min-content 1fr;
 
     ${Logo} {
       width: 80px;
@@ -90,11 +98,12 @@ const AppContainer = styled.div`
 
     ${Sidebar} {
       width: 240px;
-      grid-row: 2;
+      grid-row: 2 / span 2;
       grid-column: 1;
     }
 
-    ${Timeline} {
+    main {
+      grid-row: 3;
       grid-column: 2;
     }
   }
@@ -105,6 +114,7 @@ const App = () => {
     <AppContainer>
       <Logo />
       <PageTitle />
+      <ControlsContainer />
       <main>
         <Outlet />
       </main>

@@ -1,59 +1,42 @@
 import {
+  Button,
+  ButtonGroup,
+  Content,
+  Dialog,
+  DialogTrigger,
+  Heading as DialogTitle,
+  TextArea
+} from '@adobe/react-spectrum';
+import {
   type ChildComponent,
   type FormSubmitEvent,
   useCallback,
   useState
 } from 'react';
 import styled from 'styled-components';
+
 import {
   useTimeline
 } from '../hooks/useTimeline';
-
-import Button from './Button';
-import Input from './Input';
-
-export interface NewPostPanelProps {
-  onCreatePost?: () => void;
-};
+import {
+  getMessageFromError
+} from '../utils/error';
 
 interface NewPostFormShape {
   text: HTMLTextAreaElement;
 }
 
-const NewPostFormContainer = styled.form`
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  margin: 24px;
-  border-radius: 2px;
-  padding: 24px;
-  background: var(--color-gray-800);
-  border: 1px solid var(--color-gray-700);
-  max-width: 640px;
-
-  textarea {
-    height: 240px;
-  }
+const ErrorContainer = styled.div`
+    min-height: 16px;
+    margin: 18px 0;
 `;
 
-const NewPostContainer = styled.div`
-  position: relative;
-`;
-
-const NewPostPanel: ChildComponent<NewPostPanelProps> = (props) => {
-  const {
-    onCreatePost,
-    ...otherProps
-  } = props;
+const NewPostDialog = (close: () => void) => {
   const {
     create,
     error
   } = useTimeline();
-  const [ showForm, setShowForm ] = useState<boolean>(false);
   const [ formError, setFormError ] = useState<string>();
-  const onClick = useCallback(() => { setShowForm(true); }, []);
-  const onCancel = useCallback(() => { setShowForm(false); }, []);
   const onSubmit = useCallback(async (e: FormSubmitEvent<NewPostFormShape>) => {
     e.preventDefault();
     setFormError(undefined);
@@ -63,42 +46,68 @@ const NewPostPanel: ChildComponent<NewPostPanelProps> = (props) => {
     } = e.currentTarget.elements;
 
     try {
-      const result = await create({
-        permissions: 'public',
+      await create({
+        permissions: `public`,
         text: text.value
       });
-
-      setShowForm(false);
-      onCreatePost?.();
+      close();
     }
-    catch (ex: any) {
-      console.error(ex);
-      setFormError(ex.message);
+    catch (ex) {
+      setFormError(getMessageFromError(ex));
     }
-  }, []);
+  }, [ close, create ]);
 
   return (
-    <NewPostContainer {...otherProps}>
-      <div>
-        <Button onClick={onClick}>
-          new post
-        </Button>
-      </div>
-      {showForm && (
-        <NewPostFormContainer onSubmit={onSubmit}>
-          <Input
+    <Dialog>
+      <DialogTitle>
+        Create post
+      </DialogTitle>
+      <Content>
+        <form
+          aria-label="new-post form"
+          id="new-post-form"
+          onSubmit={onSubmit}
+        >
+          <TextArea
             id="text"
+            isRequired
             label="Post text"
             type="textarea"
+            width="100%"
           />
-          <div>
-            {formError}&nbsp;
-          </div>
-          <Button type="submit">Let's go!</Button>
-          <Button type="button" onClick={onCancel}>Cancel</Button>
-        </NewPostFormContainer>
-      )}
-    </NewPostContainer>
+          <ErrorContainer>
+            &#8203;
+            {formError ?? ``}
+          </ErrorContainer>
+          <ButtonGroup orientation="horizontal">
+            <Button
+              type="submit"
+              variant="cta"
+            >
+                submit
+            </Button>
+            <Button
+              onPress={close}
+              type="button"
+              variant="secondary"
+            >
+                cancel
+            </Button>
+          </ButtonGroup>
+        </form>
+      </Content>
+    </Dialog>
+  );
+};
+
+const NewPostPanel: ChildComponent = () => {
+  return (
+    <DialogTrigger type="modal">
+      <Button variant="cta">
+        new post
+      </Button>
+      {NewPostDialog}
+    </DialogTrigger>
   );
 };
 
