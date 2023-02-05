@@ -118,6 +118,29 @@ const getPosts = async () => {
 };
 
 /**
+ * @param {string} id
+ * @return {Promise<types.TimelineDTO|undefined>}
+ */
+const getPostById = async (id) => {
+  try {
+    const q = `
+      SELECT *
+      FROM posts
+      WHERE id = $1
+    `;
+    const values = [ id ];
+    const result = await client.query(q, values);
+
+    return result.rows.map(withoutId)[0];
+  }
+  catch (ex) {
+    console.log(`db.getPostById`, ex?.message ?? ex ?? `unknown error`);
+
+    throw ex;
+  }
+};
+
+/**
  * @param {Partial<types.TimelineDTO>} post
  * @return {Promise<types.TimelineDTO>}
  */
@@ -212,6 +235,28 @@ const getTimeline = async () => {
   return result.rows.map(withoutId);
 };
 
+/**
+ * @param {string} voteOpts.host remote host
+ * @param {boolean} voteOpts.upvote
+ * @param {string} voteOpts.uuid uuid of remote post
+ * @return {Promise<void>} a Promise that doesn't resolve to anything
+ */
+const createVote = async (voteOpts) => {
+  const {
+    host,
+    upvoted,
+    uuid
+  } = voteOpts
+  const q = `
+    INSERT INTO upvotes(host, uuid, upvoted)
+    VALUES($1, $2, $3)
+    ON CONFLICT (host, uuid) DO UPDATE SET upvoted = $3
+  `;
+  const opts = [ host, uuid, upvoted ];
+
+  await client.query(q, opts);
+};
+
 const updateSchema = async () => {
   try {
     const q = `
@@ -268,19 +313,62 @@ const getSharesForHosts = async (hosts) => {
   );
 };
 
+/**
+ * @param {string[]} hosts
+ * @return {Promise<Record<string, string[]>>}
+ */
+const getUpvotesForHosts = async (hosts) => {
+  const q = `
+    SELECT *
+    FROM upvotes
+    WHERE host = ANY($1) AND upvoted = true
+  `;
+  const params = [
+    hosts
+  ];
+  const result = await client.query(q, params);
+
+  return result.rows.reduce(
+    (acc, el) => ({
+      ...acc,
+      [el.host]: [ ...(acc[el.host] ?? []), el.uuid ]
+    }),
+    {}
+  );
+};
+
+/**
+ * @param {string} uuid
+ * @return {Promise<void>}
+ */
+const upvotePost = async (uuid) => {
+  const q = `
+    UPDATE posts
+    SET score = score + 1
+    WHERE uuid = $1
+  `;
+  const params = [ uuid ];
+
+  await client.query(q, params);
+};
+
 module.exports = {
   createConnection,
   createNotification,
   createPost,
+  createVote,
   getConnection,
   getConnections,
   getNotifications,
   getPosts,
+  getPostById,
   getSharesForHosts,
   getTimeline,
+  getUpvotesForHosts,
   initialize,
   softDeletePost,
   updateConnection,
   updateSchema,
-  upsertAuthor
+  upsertAuthor,
+  upvotePost
 };

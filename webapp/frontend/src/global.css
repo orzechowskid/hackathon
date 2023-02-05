@@ -22,7 +22,7 @@ main {
     max-width: 960px;
     margin: 4px auto;
     display: flex;
-    justify-content: center;
+    justify-content: stretch;
     align-items: stretch;
 }
 

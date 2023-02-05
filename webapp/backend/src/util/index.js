@@ -8,14 +8,14 @@ const xss = require('xss');
 const types = require('../types');
 
 /**
- * @param {string} text
- * @return {string}
+ * @param {string} text potentially-unsafe string of text
+ * @return {string} sanitized markup
  */
 function markdownToMarkup(text) {
   return xss(
     marked.parse(
       text?.replace(
-        /^[\u200B\u200C\u200D\u200E\u200F\uFEFF]/, ''
+        /^[\u200B\u200C\u200D\u200E\u200F\uFEFF]/, ``
       )
     )
   );
@@ -26,7 +26,7 @@ function markdownToMarkup(text) {
  * @return {string}
  */
 function ensureHostWithProtocol(host) {
-  return host.includes('://')
+  return host.includes(`://`)
     ? host
     : `https://${host}`;
 }
@@ -36,44 +36,49 @@ function ensureHostWithProtocol(host) {
  * @return {string}
  */
 function ensureHostWithoutProtocol(host) {
-  return host.split('://').at(-1);
+  return host.split(`://`).at(-1);
 }
 
 /**
  * @param {types.ConnectionDTO} connection
  * @return {Promise<types.TimelineDTO[]>}
  */
-function getConnectionPosts(connection) {
+async function getConnectionPosts(connection) {
   const {
     host,
     token
   } = connection;
 
-  return new Promise(async (resolve, reject) => {
-    const rejectHandle = setTimeout(reject, connection.timeout ?? 10000);
+  const rejectHandle = setTimeout(
+    () => {
+      throw new Error(`${host} timed out`);
+    },
+    connection.timeout ?? 10000
+  );
 
-    try {
-      const response = await fetch(`https://${host}/api/1/public/timeline`, {
-        headers: {
-          'X-Id': process.env.NODE_NAME,
-          'X-JWT': token
-        }
-      });
-      /** @type {types.TimelineDTO[]} */
-      const result = await response.json();
+  try {
+    const response = await fetch(`https://${host}/api/1/public/timeline`, {
+      headers: {
+        'X-Id': process.env.NODE_NAME,
+        'X-JWT': token
+      }
+    });
+    /** @type {types.TimelineDTO[]} */
+    const result = await response.json();
 
-      clearTimeout(rejectHandle);
-      resolve(result.map((result) => ({
-        ...result,
-        timeline_host: host
-      })));
-    }
-    catch (ex) {
-      console.log(ex?.message ?? ex ?? 'unknown error in getConnectionPosts');
-      clearTimeout(rejectHandle);
-      resolve([]);
-    }
-  });
+    clearTimeout(rejectHandle);
+
+    return result.map((result) => ({
+      ...result,
+      timeline_host: host
+    }));
+  }
+  catch (ex) {
+    console.log(`getConnectionPosts:`, ex?.message ?? ex ?? `unknown error`);
+    clearTimeout(rejectHandle);
+
+    return [];
+  }
 }
 
 /**
@@ -91,45 +96,67 @@ async function refreshTimeline(connections) {
 }
 
 /**
+ * @param {Object} obj source object
+ * @param {string[]} fields fields to strip out
+ * @return {Object} a subset of `obj`
+ */
+function omit(obj, fields) {
+  if (obj === undefined) {
+    return {};
+  }
+
+  return (fields ?? []).reduce(
+    (acc, el) => {
+      delete acc[el];
+
+      return acc;
+    },
+    { ...obj }
+  );
+}
+
+/**
  * @param {types.DBRecord<T>} obj
  * @returns {T}
  * @template T
  */
 function withoutId(obj) {
-  if (!obj) {
-    return null;
-  }
-  
-  const {
-    _id,
-    ...otherProps
-  } = obj;
-
-  return otherProps;
+  return omit(obj, [ `_id` ]);
 }
 
 /**
  * @param {string} host
+ * @param {Object} messageBody
+ * @param {string} messageType NOTIFY_TYPES enum value
  * @param {string} token
- * @param {string} message
  * @return {Promise<void>}
  */
-async function sendNotification(host, token, message) {
+async function sendNotification(opts) {
+  const {
+    host,
+    messageBody,
+    messageType,
+    token
+  } = opts;
+
   try {
     const response = await fetch(`https://${host}/api/1/public/notifications`, {
-      body: JSON.stringify({ text: message }),
+      body: JSON.stringify({
+        ...messageBody,
+        type: messageType
+      }),
       headers: {
-        'Content-Type': 'application/json',
+        'Content-Type': `application/json`,
         'X-ID': process.env.NODE_NAME,
         'X-JWT': token
       },
-      method: 'POST'
+      method: `POST`
     });
 
     return response.json();
   }
   catch (ex) {
-    console.log(ex?.message ?? ex ?? 'unknown error in sendNotification()');
+    console.log(ex?.message ?? ex ?? `unknown error in sendNotification()`);
   }
 }
 
@@ -137,6 +164,7 @@ module.exports = {
   ensureHostWithProtocol,
   ensureHostWithoutProtocol,
   markdownToMarkup,
+  omit,
   refreshTimeline,
   sendNotification,
   withoutId

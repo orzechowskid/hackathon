@@ -37,6 +37,7 @@
  * @property {boolean} shared
  * @property {string} text
  * @property {string} [timeline_host]
+ * @property {boolean} [upvoted]
  * @property {string} uuid
  */
 
@@ -48,7 +49,7 @@
 
 /**
  * @typedef {Object} ExternalNotificationDTO
- * @property {string} text
+ * @property {string} type
  */
 
 /**
@@ -64,4 +65,19 @@
  * @property {number} version
  */
 
-module.exports = undefined;
+const _NOTIFY_TYPES =
+  /** @type {const} */
+  ([
+    `Share`,
+    `Upvote`
+  ])
+
+/** @type {Record<typeof _NOTIFY_TYPES[number], string>} */
+const NOTIFY_TYPES = _NOTIFY_TYPES.reduce(
+  (acc, el) => ({ ...acc, [el]: el }),
+  {}
+);
+
+module.exports = {
+  NOTIFY_TYPES,
+};

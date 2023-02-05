@@ -3,18 +3,27 @@ import {
   Button,
   ButtonGroup,
   Item
-} from "@adobe/react-spectrum";
+} from '@adobe/react-spectrum';
 import {
   type ChildComponent,
   type HTMLAttributes,
   useCallback,
   Key,
-} from "react";
-import { FaCheckSquare, FaChevronCircleUp, FaShareSquare } from "react-icons/fa";
-import styled from "styled-components";
+} from 'react';
+import {
+  FaCheckSquare,
+  FaChevronCircleUp,
+  FaShareSquare
+} from 'react-icons/fa';
+import styled from 'styled-components';
 
-import { useConnect } from "../hooks/useConnect";
-import { type TimelineDTO, useTimeline } from "../hooks/useTimeline";
+import {
+  useConnect
+} from '../hooks/useConnect';
+import {
+  type TimelineDTO,
+  useTimeline
+} from '../hooks/useTimeline';
 import {
   Heading,
   Section
@@ -24,6 +33,24 @@ interface QuickHostActionsMenuProps extends HTMLAttributes<HTMLButtonElement> {
   host: string;
   id: string;
 }
+
+const PostMetrics = styled.div`
+    * {
+        vertical-align: middle;
+    }
+
+    > span {
+        padding: 0 8px;
+    }
+
+    svg {
+        margin-right: 4px;
+    }
+
+    > * + * {
+        margin-left: 16px;
+    }
+`;
 
 const TimelineItemControls = styled.div`
     button {
@@ -45,7 +72,8 @@ const TimelineItem = styled.li`
         margin-top: 12px;
     }
 
-    ${TimelineItemControls} {
+    ${TimelineItemControls},
+    ${PostMetrics} {
         margin-top: 20px;
     }
 `;
@@ -113,6 +141,7 @@ const Byline: ChildComponent<Partial<TimelineDTO>> = (props) => {
         </a>
         <QuickHostActionsMenu host={timeline_host} id={postId} />
         <FaShareSquare />
+        &nbsp;shared from&nbsp;
         <a
           href={`https://${original_host}`}
           referrerPolicy="no-referrer"
@@ -172,15 +201,81 @@ const Byline: ChildComponent<Partial<TimelineDTO>> = (props) => {
 interface TimelineItemProps {
   item: TimelineDTO;
   onShare: (item: TimelineDTO) => void;
+  onUpvote: (item: TimelineDTO) => void;
 }
 
-const TimelineEntry: ChildComponent<TimelineItemProps> = (props) => {
-  const { item, onShare } = props;
-  const { original_host, text, timeline_host } = item;
+const TimelineEntryControls: ChildComponent<TimelineItemProps> = (props) => {
+  const {
+    item,
+    onShare,
+    onUpvote
+  } = props;
+  const {
+    original_host,
+    score,
+    share_count,
+    timeline_host,
+  } = item;
   const onShareItem = useCallback(() => {
     onShare?.(item);
   }, [ item, onShare ]);
+  const onUpvoteItem = useCallback(() => {
+    onUpvote?.(item);
+  }, [ item, onUpvote ]);
   const ownPost = !original_host && !timeline_host;
+
+  if (ownPost) {
+    return (
+      <PostMetrics>
+        <span>
+          <FaShareSquare />
+          <span>
+            shares: {share_count}
+          </span>
+        </span>
+        <span>
+          <FaChevronCircleUp />
+          <span>
+            upvotes: {score}
+          </span>
+        </span>
+      </PostMetrics>
+    );
+  }
+
+  return (
+    <TimelineItemControls>
+      <ButtonGroup orientation="horizontal">
+        <Button
+          aria-pressed={item.shared}
+          onPressEnd={onShareItem}
+          variant="secondary"
+        >
+          {item.shared ? <FaCheckSquare /> : <FaShareSquare />}
+          <span>share</span>
+        </Button>
+        <Button
+          aria-pressed={item.upvoted}
+          onPressEnd={onUpvoteItem}
+          variant="secondary"
+        >
+          {item.upvoted ? <FaCheckSquare /> : <FaChevronCircleUp />}
+          <span>upvote</span>
+        </Button>
+      </ButtonGroup>
+    </TimelineItemControls>
+  );
+};
+
+const TimelineEntry: ChildComponent<TimelineItemProps> = (props) => {
+  const {
+    item,
+    onShare,
+    onUpvote
+  } = props;
+  const {
+    text
+  } = item;
 
   return (
     <TimelineItem>
@@ -192,24 +287,11 @@ const TimelineEntry: ChildComponent<TimelineItemProps> = (props) => {
           __html: text,
         }}
       />
-      {!ownPost && (
-        <TimelineItemControls>
-          <ButtonGroup orientation="horizontal">
-            <Button
-              aria-pressed={item.shared}
-              onPressEnd={onShareItem}
-              variant="secondary"
-            >
-              {item.shared ? <FaCheckSquare /> : <FaShareSquare />}
-              <span>share</span>
-            </Button>
-            <Button variant="secondary">
-              <FaChevronCircleUp />
-              <span>upvote</span>
-            </Button>
-          </ButtonGroup>
-        </TimelineItemControls>
-      )}
+      <TimelineEntryControls
+        item={item}
+        onShare={onShare}
+        onUpvote={onUpvote}
+      />
     </TimelineItem>
   );
 };
@@ -217,7 +299,8 @@ const TimelineEntry: ChildComponent<TimelineItemProps> = (props) => {
 const Timeline: ChildComponent = (props) => {
   const {
     data: timelineEntries,
-    onShare
+    onShare,
+    onUpvote
   } = useTimeline();
 
   return (
@@ -235,6 +318,7 @@ const Timeline: ChildComponent = (props) => {
             key={item.uuid ?? ``}
             item={item}
             onShare={onShare}
+            onUpvote={onUpvote}
           />
         ))}
       </TimelineList>
