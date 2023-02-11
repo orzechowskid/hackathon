@@ -9,10 +9,6 @@ const {
   markdownToMarkup,
   omit
 } = require(`../util`);
-const {
-  doSavePostShare,
-  doSavePostUpvote
-} = require('./apiUtils');
 
 const router = express.Router();
 
@@ -210,13 +206,25 @@ router.post(`/notifications`, async (req, res) => {
   } = req.body;
 
   switch (type) {
-    case types.NOTIFY_TYPES.Upvote: {
-      await doSavePostUpvote(payload);
+    case types.NOTIFY_TYPES.Downvote: {
+      await db.downvotePost(payload.uuid);
 
       break;
     }
     case types.NOTIFY_TYPES.Share: {
-      await doSavePostShare(payload);
+      await db.incrementShareCount(payload.uuid);
+
+      break;
+    }
+    case types.NOTIFY_TYPES.Unshare: {
+      await db.decrementShareCount(payload.uuid);
+
+      break;
+    }
+    case types.NOTIFY_TYPES.Upvote: {
+      await db.upvotePost(payload.uuid);
+
+      break;
     }
   }
 
