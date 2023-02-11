@@ -1,6 +1,7 @@
 #!/bin/bash
 
 PATH=~/.fly/bin:$PATH
+REGION=lax
 
 if [ "$FLY_ACCESS_TOKEN" == "" ]; then
     echo "no fly.io access key provided"
@@ -16,7 +17,7 @@ echo
 if [ "$1" == "upgrade" ]; then
     echo "upgrading $2..."
     fly deploy \
-        --region lax \
+        --region $REGION \
         --remote-only \
         --app $2
 
@@ -28,7 +29,7 @@ echo "Launching..."
 fly launch \
     --copy-config \
     --generate-name \
-    --region lax \
+    --region $REGION \
     --remote-only \
     --auto-confirm
     
@@ -50,7 +51,12 @@ echo
 echo "Creating databases (this may take a few minutes)..."
 DB_NAME=`echo $NODE_NAME | cut -d '.' -f 1`-db
 # this flyctl command does not honor the `-j` flag :(
-DB_CONNECTION_STRING=`fly postgres create -r lax -n $DB_NAME --initial-cluster-size 1 --volume-size 1 --vm-size shared-cpu-1x -j | tr ' ' '\n' | grep -m 1 postgres://`
+DB_CONNECTION_STRING=`fly postgres create -r $REGION -n $DB_NAME --initial-cluster-size 1 --volume-size 1 --vm-size shared-cpu-1x -j | tr ' ' '\n' | grep -m 1 postgres://`
+echo "done"
+
+echo
+echo "configuring storage..."
+fly volumes create alewife_storage -s 2 -r $REGION -a $APP_NAME -j
 echo "done"
 
 which md5sum
