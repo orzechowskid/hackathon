@@ -9,3 +9,7 @@
   [[services.ports]]
     handlers = ["tls", "http"]
     port = "443"
+
+[mount]
+  source = "alewife_storage"
+  destination = "/data"
