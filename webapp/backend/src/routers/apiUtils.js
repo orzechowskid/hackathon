@@ -1,5 +1,6 @@
 const types = require(`../types`);
 const {
+  downvotePost,
   upvotePost
 } = require(`../db`);
 
@@ -8,6 +9,15 @@ const {
  */
 const doSavePostUpvote = async (payload) => {
   const newScore = await upvotePost(payload.uuid)
+
+  return newScore;
+};
+
+/**
+ * @param {{ uuid: string }} payload object containing a post uuid
+ */
+const doSavePostDownvote = async (payload) => {
+  const newScore = await downvotePost(payload.uuid)
 
   return newScore;
 };

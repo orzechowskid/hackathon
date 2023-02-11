@@ -363,7 +363,7 @@ router.post(`/timeline/upvote`, async (req, res) => {
 
     res.status(200)
       .end();
-    }
+  }
   catch (ex) {
     console.log(`/timeline/upvote:`, ex?.message ?? ex ?? `unknown error`);
 
@@ -381,16 +381,42 @@ router.delete(`/timeline/upvote`, async (req, res) => {
     uuid
   } = req.body;
 
+  if (!uuid) {
+    res.status(400)
+      .end();
+
+    return;
+  }
+
+  const existingConnection = await db.getConnection(original_host ?? timeline_host);
+
+  if (!existingConnection) {
+    res.status(400)
+      .end();
+
+    return;
+  }
+
   try {
-    await db.createVote({
-      host: original_host ?? timeline_host,
-      upvoted: false,
-      uuid: original_uuid ?? uuid
-    });
+    await Promise.all([
+      sendNotification({
+        host: original_host ?? timeline_host,
+        messageBody: {
+          uuid: original_uuid ?? uuid
+        },
+        messageType: types.NOTIFY_TYPES.Downvote,
+        token: existingConnection.token
+      }),
+      db.createVote({
+        host: original_host ?? timeline_host,
+        upvoted: false,
+        uuid: original_uuid ?? uuid
+      })
+    ]);
 
     res.status(200)
       .end();
-    }
+  }
   catch (ex) {
     console.log(`/timeline/upvote:`, ex?.message ?? ex ?? `unknown error`);
 
