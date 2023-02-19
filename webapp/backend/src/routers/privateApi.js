@@ -216,7 +216,7 @@ router.post(
       ? `${text}\n\n[![${altText ?? `image`}](/media/${req.file.filename})](/media/${req.file.filename})`
       : text;
 
-    if (!permissions || !text) {
+    if (!permissions) {
       res.status(400)
         .end();
 
