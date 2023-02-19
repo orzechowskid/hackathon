@@ -9,10 +9,11 @@ import {
   useIdentity
 } from '../useIdentity';
 import {
-  getFetcher
+  getFetcherFactory
 } from './utils';
 
 interface RemoteDataOpts {
+  getFetcher?: typeof getFetcherFactory;
   swrOpts: SWRConfiguration;
 }
 
@@ -20,14 +21,15 @@ const putFetcher = <T extends object>(token: string | null) => (path: RequestInf
   window.fetch(path, {
     body: JSON.stringify(payload),
     headers: {
-      'Content-Type': 'application/json',
+      'Content-Type': `application/json`,
       ...(token ? { 'X-JWT': token } : {})
     },
-    method: 'PUT'
+    method: `PUT`
   }).then((res) => res.json() as T);
 
 const useRemoteData = function<T extends object>(apiEndpoint: string, opts?: RemoteDataOpts) {
   const {
+    getFetcher = getFetcherFactory,
     swrOpts
   } = opts ?? {};
   const {
@@ -45,7 +47,7 @@ const useRemoteData = function<T extends object>(apiEndpoint: string, opts?: Rem
       populateCache: true,
       revalidate: false
     })
-  }, [ token ]);
+  }, [ apiEndpoint, mutate, token ]);
 
   return {
     data,

@@ -6,3 +6,4 @@ webapp/devtools/fake-ca/domains/*
 .cache/
 *~
 *#
+webapp/devtools/media-*/

@@ -1,4 +1,5 @@
 const express = require(`express`);
+const multer = require(`multer`);
 const fetch = require(`node-fetch`);
 const {
   v4: uuid
@@ -10,12 +11,20 @@ const {
   ensureHostWithProtocol,
   ensureHostWithoutProtocol,
   markdownToMarkup,
+  md5,
   refreshTimeline,
   sendNotification
 } = require(`../util`);
 
 const router = express.Router();
+const upload = multer({
+  storage: multer.diskStorage({
+    destination: process.env.MEDIA_PATH,
+    filename: (_req, file, cb) => cb(null, `${md5(String(Math.random() * 1E9) + Date.now())}.${file.originalname.slice(file.originalname.lastIndexOf(`.`)+1)}`)
+  })
+});
 
+router.use(express.urlencoded({ extended: true }));
 router.use(express.json());
 
 router.use((req, res, next) => {
@@ -191,41 +200,49 @@ router.get(`/timeline`, async (req, res) => {
     .end();
 });
 
-router.post(`/timeline`, async (req, res) => {
-  /** @type {Partial<db.TimelineDTO>} */
-  const {
-    original_host,
-    permissions,
-    text,
-    uuid
-  } = req.body;
-
-  if (!permissions || !text) {
-    res.status(400)
-      .end();
-
-    return;
-  }
-
-  try {
-    const newPost = await db.createPost({
-      author: process.env.USER_NAME,
+router.post(
+  `/timeline`,
+  upload.single(`newPostImage`),
+  async (req, res) => {
+    /** @type {Partial<types.TimelineDTO>} */
+    const {
+      altText,
       original_host,
-      original_uuid: uuid,
       permissions,
-      text
-    });
+      text,
+      uuid
+    } = req.body;
+    const postText = req.file
+      ? `${text}\n\n[![${altText ?? `image`}](/media/${req.file.filename})](/media/${req.file.filename})`
+      : text;
 
-    res.status(201)
-      .json(newPost)
-      .end();
-  }
-  catch (ex) {
+    if (!permissions || !text) {
+      res.status(400)
+        .end();
+
+      return;
+    }
+
+    try {
+      const newPost = await db.createPost({
+        author: process.env.USER_NAME,
+        original_host,
+        original_uuid: uuid,
+        permissions,
+        text: postText
+      });
+
+      res.status(201)
+        .json(newPost)
+        .end();
+    }
+    catch (ex) {
       console.error(ex.message);
       res.status(500)
         .end();
     }
-});
+  }
+);
 
 router.post(`/timeline/share`, async (req, res) => {
   /** @type {types.TimelineDTO} */

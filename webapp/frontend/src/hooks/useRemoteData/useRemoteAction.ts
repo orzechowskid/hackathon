@@ -4,47 +4,65 @@ import {
 } from 'react';
 
 import {
+  getMessageFromError
+} from '../../utils/error';
+import {
   useIdentity
 } from '../useIdentity';
 
 interface RemoteActionOpts<Res, Req> {
-  verb: Request[`method`]
+  fetcher?: (token: string | null, payload: Req) => (info: RequestInfo, opts?: RequestInit) => Promise<Res>;
+  verb?: Request[`method`]
 }
 
-const useRemoteAction = function<Response extends object, Request = void>(apiEndpoint: string, opts?: RemoteActionOpts<Response, Request>) {
+const fetchFactory = (token: string | null, payload: any) =>
+  async (info: RequestInfo, opts?: RequestInit) => {
+    const response = await window.fetch(info, {
+      body: payload ? JSON.stringify(payload) : undefined,
+      method: `POST`,
+      ...opts,
+      headers: {
+        ...(payload ? { 'Content-Type': `application/json` } : {}),
+        ...(token ? { 'X-JWT': token } : {}),
+        ...(opts?.headers)
+      }
+    });
+    const result = await response.json();
+
+    return result;
+  };
+
+const useRemoteAction = <Response = void, Request = void>(apiEndpoint: string, opts?: RemoteActionOpts<Response, Request>) => {
+  const {
+    fetcher = fetchFactory
+  } = opts ?? {};
   const {
     token
   } = useIdentity();
   const [ busy, setBusy ] = useState<boolean>(false);
-  const execute = useCallback(async (payload?: Request, initOpts?: RequestInit) => {
-    try {
-      setBusy(true);
+  const [ error, setError ] = useState<string>();
+  const execute = useCallback(async (payload: Request) => {
+    const actionFetcher = fetcher(token, payload);
 
-      const response = await window.fetch(apiEndpoint, {
-        method: opts?.verb ?? `POST`,
-        ...(payload ? { body: JSON.stringify(payload) } : {}),
-        ...(initOpts ?? {}),
-        headers: {
-          ...(initOpts?.headers ?? {}),
-          ...(payload ? { 'Content-Type': `application/json` } : {}),
-          ...(token ? { 'X-JWT': token } : {})
-        }
-      });
+    setError(undefined);
+    setBusy(true);
+
+    try {
+      const response = await actionFetcher(apiEndpoint);
 
       setBusy(false);
 
-      if (response.headers.get(`Content-Type`) === `application/json`) {
-        return response.json() as Promise<Response>;
-      }
+      return response;
     }
     catch (ex) {
       setBusy(false);
-      throw (ex);
+      setError(getMessageFromError(ex));
     }
-  }, [ apiEndpoint, opts?.verb, token ]);
+  }, [ apiEndpoint, fetcher, token ])
 
   return {
     busy,
+    error,
     execute
   };
 };

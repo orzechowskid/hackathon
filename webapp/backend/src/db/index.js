@@ -5,9 +5,9 @@ const fetch = require('node-fetch');
 
 const {
   withoutId
-} = require('../util');
+} = require(`../util`);
 
-const types = require('../types');
+const types = require(`../types`);
 
 /** @type {Client} */
 let client;
@@ -222,15 +222,23 @@ const createNotification = async (text) => {
   return result.rows[0];
 };
 
-const getTimeline = async () => {
+/**
+ * @param {Object} opts
+ * @param {number} opts.limit
+ * @return {Promise<types.TimelineDTO[]>}
+ */
+const getTimeline = async (opts) => {
   const q = `
     SELECT *
     FROM posts
     WHERE original_host IS NULL and deleted = false
     ORDER BY created_at DESC
-    LIMIT 1
+    LIMIT $1
   `;
-  const result = await client.query(q);
+  const values = [
+    opts.limit
+  ];
+  const result = await client.query(q, values);
 
   return result.rows.map(withoutId);
 };
