@@ -1,11 +1,11 @@
-const fetch = require('node-fetch');
-
+const MD5 = require(`md5.js`);
 const {
   marked
-} = require('marked');
-const xss = require('xss');
+} = require(`marked`);
+const fetch = require(`node-fetch`);
+const xss = require(`xss`);
 
-const types = require('../types');
+const types = require(`../types`);
 
 /**
  * @param {string} text potentially-unsafe string of text
@@ -160,10 +160,14 @@ async function sendNotification(opts) {
   }
 }
 
+const md5 =
+  (arg) => new MD5().update(JSON.stringify(arg)).digest(`hex`);
+
 module.exports = {
   ensureHostWithProtocol,
   ensureHostWithoutProtocol,
   markdownToMarkup,
+  md5,
   omit,
   refreshTimeline,
   sendNotification,

@@ -13,6 +13,7 @@ import {
 } from './useRemoteData/useRemoteCollection';
 
 export interface TimelineDTO {
+  attachment?: string[];
   author: string;
   created_at: string;
   original_author?: string;
@@ -29,8 +30,32 @@ export interface TimelineDTO {
   uuid: string;
 }
 
+const createFetcher = (token: string | null) => {
+  return (info: RequestInfo, payload?: FormData) =>
+    window.fetch(info, {
+      body: payload,
+      method: `POST`,
+      headers: {
+        ...(token ? { 'X-JWT': token } : {}),
+      }
+    }).then(async (res) => ((await res.json()) as TimelineDTO));
+};
+
+const optimisticCreate = (obj: FormData) => {
+  const fields = [ ...obj.entries() ].reduce(
+    (acc, [k,v]) => ({ ...acc, [k]: v }),
+    {}
+  );
+  console.log(fields);
+  return {
+    text: `asdf`
+  } as TimelineDTO;
+};
+
 const useTimeline = () => {
-  const timeline = useRemoteCollection<TimelineDTO>(`/api/1/my/timeline`, {
+  const timeline = useRemoteCollection<TimelineDTO, FormData>(`/api/1/my/timeline`, {
+    createFetcher,
+    optimisticCreate,
     swrOpts: {
       dedupingInterval: 5000,
       refreshInterval: 30000

@@ -21,6 +21,10 @@ server {
     proxy_pass http://alewife-backend;
   }
 
+  location /media {
+    proxy_pass http://alewife-backend;
+  }
+
   location / {
     proxy_pass http://alewife-frontend;
     proxy_http_version 1.1;

@@ -59,7 +59,6 @@ echo "configuring storage..."
 fly volumes create alewife_storage -s 2 -r $REGION -a $APP_NAME -j
 echo "done"
 
-which md5sum
 echo `head -c 128 /dev/urandom | md5sum`
 
 echo

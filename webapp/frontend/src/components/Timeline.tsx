@@ -72,6 +72,13 @@ const TimelineItem = styled.li`
         margin-top: 12px;
     }
 
+    /* this will do until we generate thumbnails on the server */
+    img {
+        width: 240px;
+        height: 240px;
+        object-fit: none;
+    }
+
     ${TimelineItemControls},
     ${PostMetrics} {
         margin-top: 20px;

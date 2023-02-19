@@ -34,8 +34,6 @@ const ConnectForm: ChildComponent = (props) => {
       host: e.currentTarget.elements.name.value
     };
     const response = await execute(payload);
-
-    console.log(response);
   }, []);
 
   return (

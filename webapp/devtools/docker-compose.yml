@@ -28,6 +28,7 @@ services:
     environment:
       - DB_CONNECTION_STRING=postgres://${PGUSER}:${PGPASSWORD}@${CONTAINER_HOST_ADDR}:${PGPORT}/${PGDATABASE}
       - JWT_SECRET=${BACKEND_JWT_SECRET}
+      - MEDIA_PATH=/media
       - NODE_EXTRA_CA_CERTS=/etc/root-ca.pem
       - NODE_NAME
       - PORT=${BACKEND_PORT}
@@ -42,6 +43,7 @@ services:
       - ${BACKEND_PORT}:${BACKEND_PORT}
     volumes:
       - "./fake-ca/root-ca/crt.pem:/etc/root-ca.pem"
+      - "./media-${ALEWIFE_ENV}:/media"
 
   frontend:
     build:
