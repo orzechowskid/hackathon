@@ -213,7 +213,7 @@ router.post(
       uuid
     } = req.body;
     const postText = req.file
-      ? `${text}\n\n[![${altText ?? `image`}](/media/${req.file.filename})](/media/${req.file.filename})`
+      ? `${text}\n\n[![${altText ?? `image`}](https://${process.env.NODE_NAME}/media/${req.file.filename})](https://${process.env.NODE_NAME}/media/${req.file.filename})`
       : text;
 
     if (!permissions) {
